@@ -5,12 +5,12 @@
              <!--xmlns:local="clr-namespace:Osire.Models"
              BindingContext="{x:Type local:LED}"-->
 
-    <ContentPage.MenuBarItems>
+    <!--<ContentPage.MenuBarItems>
         <MenuBarItem Text="Pages">
             <MenuFlyoutItem Text="Static Colors" Command="{Binding Rolf}" />
             <MenuFlyoutItem Text="Stats" Command="{Binding Rolf}" />
         </MenuBarItem>
-    </ContentPage.MenuBarItems>
+    </ContentPage.MenuBarItems>-->
 
     <Grid>
         <Grid.RowDefinitions>
@@ -30,71 +30,7 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         
-        <Button Text="Init Leuchte"
-                VerticalOptions="Center"
-                HorizontalOptions="Center"
-                Clicked="OnButtonClicked" 
-                x:Name="btnInitLeuchte"
-                Grid.Row="0"
-                Grid.Column="0"/>
-        <Label x:Name="lblInitLeute" TextColor="Red" />
-
-
-        <Button Text="Init LED"
-                VerticalOptions="Center"
-                HorizontalOptions="Center"
-                Clicked="InitLED" 
-                x:Name="BtnInitLED"
-                Grid.Row="0"
-                Grid.Column="1"/>
-        
-        <Button Text="Activate LED"
-                VerticalOptions="Center"
-                HorizontalOptions="Center"
-                Clicked="ActivateLed" 
-                x:Name="BtnActivateLed"
-                Grid.Row="0"
-                Grid.Column="2"/>
-        
-        <Button Text="10mA"
-                x:Name="BtnMaxCurrent"
-                VerticalOptions="Center"
-                HorizontalOptions="Center"
-                Clicked="SetMaxCurrent" 
-                Grid.Row="0"
-                Grid.Column="3"/>
-
-        <!--IP Adresse-->
-        <VerticalStackLayout Grid.Row="0" Grid.Column="6" Margin="0,0,10,0" HorizontalOptions="End" VerticalOptions="Center">
-        <Entry x:Name="entry_ipAddress"
-               HorizontalOptions="Start"
-               MaximumHeightRequest="15"
-               MinimumWidthRequest="158"
-               Placeholder="IP Address"
-               ClearButtonVisibility="WhileEditing"
-               MaxLength="15"
-               TextChanged="HandleIpChange" />
-            <Label x:Name="lblIp" Text="" Margin="3,0,0,0" FontSize="12"/>
-        </VerticalStackLayout>
-
-        <!--LED Count-->
-        <VerticalStackLayout Grid.Row="0" Grid.Column="5" Margin="0,0,10,0" HorizontalOptions="End" VerticalOptions="Center">
-        <Entry x:Name="entry_LedCount"
-               MaximumHeightRequest="15"
-               MinimumWidthRequest="100"
-               Placeholder="LED Count"
-               ClearButtonVisibility="WhileEditing"
-               MaxLength="4"
-               TextChanged="HandleLedChange"
-               Grid.Row="0"
-               Grid.Column="5"
-               Keyboard="Numeric"/>
-            <Label Text="LED Count" Margin="3,0,0,0" FontSize="12"/>
-        </VerticalStackLayout>
-
         <!--LED List-->
-
-
         <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="4" Grid.ColumnSpan="2">
         <Grid >
             <Grid.RowDefinitions>
@@ -104,29 +40,100 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition/>
-                <ColumnDefinition/>
+                <ColumnDefinition  Width="75"/>
             </Grid.ColumnDefinitions>
 
-            <ListView x:Name="countedLeds" HorizontalOptions="Start" MaximumWidthRequest="75" ItemSelected="svLedSelected" ItemsSource="{Binding LED}"
-                      Grid.Row="1" Grid.Column="0" Grid.RowSpan="4">
+                <Button Text="Init"
+                ToolTipProperties.Text="Init the Light"
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                Clicked="InitLight" 
+                x:Name="btnInitLeuchte"
+                WidthRequest="100"
+                Grid.Row="0"
+                Grid.Column="0"/>
+
+                <Button Text="Init LED"
+                ToolTipProperties.Text="Init the Leds"
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                Clicked="InitLED" 
+                x:Name="BtnInitLED"
+                IsEnabled="False"
+                WidthRequest="100"
+                Grid.Row="1"
+                Grid.Column="0"/>
+
+                <Button Text="10mA"
+                ToolTipProperties.Text="Set the max. current"   
+                x:Name="BtnMaxCurrent"
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                WidthRequest="100"
+                Clicked="SetMaxCurrent" 
+                Grid.Row="2"
+                Grid.Column="0"/>
+            
+                <Button Text="ON"
+                ToolTipProperties.Text="Well it's a light switch"        
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                Clicked="ActivateLed" 
+                WidthRequest="100"                        
+                x:Name="BtnActivateLed"
+                Grid.Row="3"
+                Grid.Column="0"/>
+
+                <!--IP Adresse-->
+                <VerticalStackLayout Grid.Row="0" Grid.Column="1" Margin="0,0,10,0" HorizontalOptions="Start" VerticalOptions="Center">
+                    <Entry x:Name="entry_ipAddress"
+                    HorizontalOptions="Start"
+                    MaximumHeightRequest="15"
+                    MinimumWidthRequest="158"
+                    Placeholder="IP Address"
+                    ClearButtonVisibility="WhileEditing"
+                    MaxLength="15"
+                    TextChanged="HandleIpChange" 
+                    Completed="HandleIpComplete"/>
+                    <Label x:Name="lblIp" Text="" Margin="3,0,0,0" FontSize="12"/>
+                </VerticalStackLayout>
+
+                <!--LED Count-->
+                <VerticalStackLayout Grid.Row="1" Grid.Column="1" Margin="0,0,10,0" HorizontalOptions="Start" VerticalOptions="Center">
+                    <Entry x:Name="entry_LedCount"
+                    MaximumHeightRequest="15"
+                    MinimumWidthRequest="100"
+                    Placeholder="LED Count"
+                    ClearButtonVisibility="WhileEditing"
+                    MaxLength="4"
+                    TextChanged="HandleLedChange"
+                    Completed="HandleLedCountComplete"/>
+                    <Label  x:Name="lblLedCount" Margin="3,0,0,0" FontSize="12"/>
+                </VerticalStackLayout>
+
+                <Label x:Name="lblLightState" Text="dummy" HorizontalOptions="Start" VerticalOptions="Center"
+                       Grid.Row="3" Grid.Column="1" TextColor="Red"/>
+
+
+                <ListView x:Name="countedLeds" HorizontalOptions="Start" MaximumWidthRequest="75" ItemSelected="svLedSelected" ItemsSource="{Binding LED}"
+                      Grid.Row="1" Grid.Column="4" Grid.RowSpan="4" IsVisible="False">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <TextCell Text="{Binding Address}"/>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <VerticalStackLayout Grid.Row="0" Grid.Column="0">
+            <VerticalStackLayout Grid.Row="0" Grid.Column="4">
                 <Entry 
                     Placeholder="Address"
                     Completed="EntryLedAddr"
                     x:Name="ledAddr"
+                    IsVisible="false"
                     />
-                <Label Text="Select a LED" FontSize="12"/>
-                <Label x:Name="fuck" Text="So viele" />
-            </VerticalStackLayout>
-           
+                    <Label x:Name="lblledAddr" Text="Select a LED" FontSize="12" IsVisible="false"/>
+                </VerticalStackLayout>
         </Grid>
         </Border>
 
@@ -286,9 +293,60 @@
             <Label Text="Live Update" VerticalOptions="Center" Margin="35,0,0,0" Grid.Row="4" Grid.Column="3" />
             
             <Border  x:Name="colorBoxView" StrokeThickness="1" Stroke="#FFFFFF" Grid.Row="0" Grid.Column="2" Grid.RowSpan="3">
-                <Label Text="#12345678910" x:Name="colorBoxValue"/>
+                <Label Text="#000000" x:Name="colorBoxValue"/>
             </Border>
         </Grid>
+
+        <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="6" Grid.ColumnSpan="1" Padding="10" HorizontalOptions="Center">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="35"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <CheckBox x:Name="cbStateIp" Grid.Row="0" Grid.Column="0" Color="Green"/>
+                <CheckBox x:Name="cbStateLedCount"  Grid.Row="1" Grid.Column="0" Color="Green"/>
+                <CheckBox Grid.Row="2" Grid.Column="0" Color="Green"/>
+                <CheckBox Grid.Row="3" Grid.Column="0" Color="Green"/>
+                <CheckBox Grid.Row="4" Grid.Column="0" Color="Green"/>
+                <CheckBox Grid.Row="5" Grid.Column="0" Color="Green"/>
+                <Label Text="Ip Address set" Grid.Row="0" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="Number of LEDs set" Grid.Row="1" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="Light init" Grid.Row="2" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="LEDs init" Grid.Row="3" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="Ip Address Set" Grid.Row="4" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="Ip Address Set" Grid.Row="5" Grid.Column="1" VerticalTextAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="4" Grid.Row="3" Grid.ColumnSpan="2" >
+            <Grid >
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Button Text="Send Command"
+                        Grid.Row="0" Grid.Column="0"/>
+                <Button Text="Lauflicht"
+                        Grid.Row="1" Grid.Column="0"/>
+                <Button Text="Static Color"
+                        Grid.Row="0" Grid.Column="1"/>
+                <Button Text="Random"
+                        Grid.Row="1" Grid.Column="1"/>
+            </Grid>
+        </Border>
 
 
         <!--List of active commands-->

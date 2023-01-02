@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Osire;
 
@@ -14,31 +15,31 @@ public partial class MainPage : ContentPage
     }
     Leuchte lamp; 
     
-    private void Rolf(object sender, EventArgs e)
+    private void InitLight(object sender, EventArgs e)
 	{
-       	
-	}
-
-    private void OnButtonClicked(object sender, EventArgs e)
-	{
-        //lamp = new Leuchte(16);
         if (string.IsNullOrEmpty(entry_LedCount.Text))
         {
-            lblInitLeute.Text = "LED Count is missing !";
+            lblLightState.Text = "LED Count is missing !";
             btnInitLeuchte.IsEnabled = false;
             return;
         }
 
-        int anz; 
-        if(!int.TryParse(entry_LedCount.Text,out anz))
+        if(!int.TryParse(entry_LedCount.Text,out int anz))
         {
-            lblInitLeute.Text = "LED Count war keine Zahl!";
+            lblLightState.Text = "LED Count war keine Zahl!";
+            btnInitLeuchte.IsEnabled = false;
+            return;
+        }
+
+        if(anz == 0)
+        {
+            lblLightState.Text = "Count == 0!";
             btnInitLeuchte.IsEnabled = false;
             return;
         }
        
         lamp = new Leuchte((ushort)anz);
-        fuck.Text = lamp.LEDs.Count.ToString();
+        BtnInitLED.IsEnabled = true;
     }
 
     private async void InitLED(object sender, EventArgs e)
@@ -49,6 +50,12 @@ public partial class MainPage : ContentPage
         //Update List view
         BtnInitLED.IsEnabled = false;
         countedLeds.ItemsSource = await Task.Run(async()=> await dummyLEDS());
+       
+        //Activate the led selection
+        countedLeds.IsVisible = true;
+        ledAddr.IsVisible= true;
+        lblledAddr.IsVisible= true;
+
         BtnInitLED.IsEnabled = true;
 
     }
@@ -58,20 +65,20 @@ public partial class MainPage : ContentPage
         System.Threading.Thread.Sleep(5000);
         for (int i = 0; i < lamp.LedCount; i++)
         {
-            lamp.LEDs.ElementAt(i).Address = (ushort)(i + 1);
+          lamp.LEDs.ElementAt(i).Address = (ushort)(i + 1);
         }
         return lamp.LEDs;
     }
 
     private void ActivateLed(object sender, EventArgs e)
     {
-        if(BtnActivateLed.Text == "Activate LED")
+        if(BtnActivateLed.Text == "On")
         {
-            BtnActivateLed.Text = "Deactivate LED";
+            BtnActivateLed.Text = "Off";
         }
         else
         {
-            BtnActivateLed.Text = "Activate LED";
+            BtnActivateLed.Text = "On";
         }
     }
 
@@ -109,18 +116,54 @@ public partial class MainPage : ContentPage
         entry_ipAddress.Text= text;
 	}
 
+    private void HandleIpComplete(object sender, EventArgs e)
+    {
+        cbStateIp.IsChecked = true;
+    }
+
+    //Handle Selected LED
     private void EntryLedAddr(object sender, EventArgs e)
     {
         string addresse = ledAddr.Text;
-        int pos = int.Parse(addresse);
+        if (!int.TryParse(addresse, out int pos))
+        {
+            return;
+        }
+        if (pos > lamp.LedCount)
+        {
+            pos = lamp.LedCount;
+        }
+        BtnInitLED.IsEnabled= true;
         countedLeds.ScrollTo(lamp.LEDs.ElementAt(pos - 1), ScrollToPosition.Start , true);
-        lblSelectedLed.Text = addresse;
+        lblSelectedLed.Text = pos.ToString();
+        ledAddr.Text = pos.ToString();
     }
-       
 
+    //Handle LED selection from ListView
+    void svLedSelected(object sender, SelectedItemChangedEventArgs e)
+    {
+        LED led = e.SelectedItem as LED;
+        lblSelectedLed.Text = led.Address.ToString();
+    }
+
+    //Handle LED count Change
     private void HandleLedChange(object sender, EventArgs e)
     {
-        btnInitLeuchte.IsEnabled = true;
+        string text = entry_ipAddress.Text;
+        int pos = text.Length;
+        if (pos > 0)
+        {
+            lblLedCount.Text = "LED Count";
+        }
+        else
+        {
+            lblLedCount.Text = "";
+        }
+    }
+
+    private void HandleLedCountComplete(object sender, EventArgs e)
+    {
+        cbStateLedCount.IsChecked = true;
     }
 
     void OnSliderRedChanged(object sender, ValueChangedEventArgs e)
@@ -166,12 +209,6 @@ public partial class MainPage : ContentPage
     void OnSliderDelayChanged(object sender, ValueChangedEventArgs e)
     {
         lableDelay.Text = e.NewValue.ToString();
-    }
-
-    void svLedSelected (object sender, SelectedItemChangedEventArgs e)
-    {
-        LED led = e.SelectedItem as LED;
-        lblSelectedLed.Text = led.Address.ToString();
     }
 
     private CancellationTokenSource _cts;
