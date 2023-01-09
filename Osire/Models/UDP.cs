@@ -9,25 +9,26 @@ using System.Net.Sockets;
 
 namespace Osire.Models
 {
-    internal class UDP
+    class UDP
     {
         UdpClient client;
         IPEndPoint remotEndPoint;
         IPEndPoint localEndPoint;
-        public string Ip { get; set; }
-        private int PortSend = 64000;
-        private int PortReceive = 64003;
+        private string Ip { get; set; }
+        private readonly int PortSend = 64000;
+        private readonly int PortReceive = 64003;
 
-        UDP(string Ip)
+        public UDP(string Ip)
         {
-            this.Ip = Ip;
             client = new UdpClient();
+            this.Ip = Ip;
             remotEndPoint = new IPEndPoint(IPAddress.Parse(Ip), PortSend);
             localEndPoint = new IPEndPoint(IPAddress.Any, PortReceive);
         }
 
         public void SendMessage(byte[] data)
         {
+
             client.Send(data, data.Length, remotEndPoint);
         }
 

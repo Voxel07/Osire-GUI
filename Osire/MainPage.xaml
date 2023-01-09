@@ -2,16 +2,6 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Osire.MainPage">
-             <!--xmlns:local="clr-namespace:Osire.Models"
-             BindingContext="{x:Type local:LED}"-->
-
-    <!--<ContentPage.MenuBarItems>
-        <MenuBarItem Text="Pages">
-            <MenuFlyoutItem Text="Static Colors" Command="{Binding Rolf}" />
-            <MenuFlyoutItem Text="Stats" Command="{Binding Rolf}" />
-        </MenuBarItem>
-    </ContentPage.MenuBarItems>-->
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="100" />
@@ -45,12 +35,13 @@
                 <ColumnDefinition  Width="75"/>
             </Grid.ColumnDefinitions>
 
-                <Button Text="Init"
-                ToolTipProperties.Text="Init the Light"
+                <Button Text="Reset LEDs"
+                ToolTipProperties.Text="Reset LEDs to be initialized"
                 VerticalOptions="Center"
                 HorizontalOptions="Start"
-                Clicked="InitLight" 
-                x:Name="btnInitLeuchte"
+                Clicked="CommandReset" 
+                IsEnabled="False"
+                x:Name="btnResetLed"
                 WidthRequest="100"
                 Grid.Row="0"
                 Grid.Column="0"/>
@@ -66,15 +57,15 @@
                 Grid.Row="1"
                 Grid.Column="0"/>
 
-                <Button Text="10mA"
+                <!--<Button Text="10mA"
                 ToolTipProperties.Text="Set the max. current"   
                 x:Name="BtnMaxCurrent"
                 VerticalOptions="Center"
                 HorizontalOptions="Start"
                 WidthRequest="100"
                 Clicked="SetMaxCurrent" 
-                Grid.Row="2"
-                Grid.Column="0"/>
+                Grid.Row="2"l
+                Grid.Column="0"/>-->
             
                 <Button Text="ON"
                 ToolTipProperties.Text="Well it's a light switch"        
@@ -94,9 +85,9 @@
                     MinimumWidthRequest="158"
                     Placeholder="IP Address"
                     ClearButtonVisibility="WhileEditing"
+                    Text="192.168.1.210"
                     MaxLength="15"
-                    TextChanged="HandleIpChange" 
-                    Completed="HandleIpComplete"/>
+                    TextChanged="HandleIpChange" />
                     <Label x:Name="lblIp" Text="" Margin="3,0,0,0" FontSize="12"/>
                 </VerticalStackLayout>
 
@@ -105,11 +96,11 @@
                     <Entry x:Name="entry_LedCount"
                     MaximumHeightRequest="15"
                     MinimumWidthRequest="100"
+                    Text="4"
                     Placeholder="LED Count"
                     ClearButtonVisibility="WhileEditing"
                     MaxLength="4"
-                    TextChanged="HandleLedChange"
-                    Completed="HandleLedCountComplete"/>
+                    TextChanged="HandleLedCountChange"/>
                     <Label  x:Name="lblLedCount" Margin="3,0,0,0" FontSize="12"/>
                 </VerticalStackLayout>
 
@@ -137,16 +128,44 @@
         </Grid>
         </Border>
 
-        <!--Kommunikation stats-->
-        <Border StrokeThickness="1" Stroke="AliceBlue" Grid.Row="3" Grid.ColumnSpan="3" Grid.Column="0">
+        <!--Light state-->
+        <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="6" Grid.ColumnSpan="1" Padding="10" HorizontalOptions="Center">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="35"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <CheckBox x:Name="cbStateIp" Grid.Row="0" Grid.Column="0" Color="Green" IsEnabled="False"/>
+                <CheckBox x:Name="cbStateLightCount"  Grid.Row="1" Grid.Column="0" Color="Green" IsEnabled="False"/>
+                <CheckBox x:Name="cbStateLightReset" Grid.Row="2" Grid.Column="0" Color="Green" IsEnabled="False"/>
+                <CheckBox x:Name="cbStateLightInit" Grid.Row="3" Grid.Column="0" Color="Green" IsEnabled="False"/>
+                <Label x:Name="lblIpAddrSet" Text="Ip Address set" Grid.Row="0" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="Number of LEDs set" Grid.Row="1" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="LEDs reset" Grid.Row="2" Grid.Column="1" VerticalTextAlignment="Center"/>
+                <Label Text="LEDs initalized" Grid.Row="3" Grid.Column="1" VerticalTextAlignment="Center"/>
+
+            </Grid>
+        </Border>
+
+        <!--LED stats-->
+        <Border StrokeThickness="1" Grid.Row="3" Grid.ColumnSpan="4" Grid.Column="0" Grid.RowSpan="2">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="35"/><!--Number and Temp-->
                     <RowDefinition Height="30"/><!--Box Description-->
-                    <RowDefinition /> <!--Box-->
+                    <RowDefinition Height="120"/><!--Box-->
+                    <RowDefinition Height="50"/><!--Timestamp and refresh-->
+                    <RowDefinition Height="50"/> <!--LBL-->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
+                    <ColumnDefinition />
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
@@ -175,9 +194,11 @@
 
                 <Label Text="ComStats" Grid.Row="1" Grid.Column="0"/>
                 <Label Text="Setup" Grid.Row="1" Grid.Column="1"/>
-                <Label Text="Error" Grid.Row="1" Grid.Column="2"/>
+                <Label Text="Error" ToolTipProperties.Text="Behavior if a communication error flag is raised" Grid.Row="1" Grid.Column="2"/>
                 <Label Text="PWM" Grid.Row="1" Grid.Column="3"/>
+                <Label Text="Status" Grid.Row="1" Grid.Column="4"/>
 
+                <!--COMSTATS-->
                 <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="1">
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -190,13 +211,12 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Label Text="SIO1:" Grid.Row="0" Grid.Column="0"/>
-                    <Label Text="MCU" Grid.Row="0" Grid.Column="1"/>
+                    <Label x:Name="LblSio1" Text="MCU" Grid.Row="0" Grid.Column="1"/>
                     <Label Text="SIO2:" Grid.Row="1" Grid.Column="0"/>
-                    <Label Text="LVDS" Grid.Row="1" Grid.Column="1"/>
-                    <Label Text="Müll:" Grid.Row="2" Grid.Column="0"/>
-                    <Label x:Name="testing" Text="" Grid.Row="2" Grid.Column="1"/>
+                    <Label x:Name="LblSio2" Text="LVDS" Grid.Row="1" Grid.Column="1"/>
                 </Grid>
 
+                <!--Setup-->
                 <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="1">
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -208,16 +228,17 @@
                         <ColumnDefinition Width="75"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Label Text="PWM:" Grid.Row="0" Grid.Column="0"/>
-                    <Label Text="500Hz" Grid.Row="0" Grid.Column="1"/>
-                    <Label Text="CRC:" Grid.Row="1" Grid.Column="0"/>
-                    <Label Text="Enabled" Grid.Row="1" Grid.Column="1"/>
-                    <Label Text="TMP_CLK:" Grid.Row="2" Grid.Column="0"/>
-                    <Label Text="2.4 Khz" Grid.Row="2" Grid.Column="1"/>
-                    <Label Text="CLK:" Grid.Row="3" Grid.Column="0"/>
-                    <Label Text="Aktive" Grid.Row="3" Grid.Column="1"/>
+                    <Label Text="PWM_F:" Grid.Row="0" Grid.Column="0"/>
+                    <Label x:Name="LblPwmF" Text="500Hz" Grid.Row="0" Grid.Column="1"/>
+                    <Label Text="CLK Pol:" ToolTipProperties.Text="CLK Polarity for MCU Mode" Grid.Row="1" Grid.Column="0"/>
+                    <Label x:Name="LblClkPolarity"  Text="Positive" Grid.Row="1" Grid.Column="1"/>
+                    <Label Text="CRC:" ToolTipProperties.Text="CRC check" Grid.Row="2" Grid.Column="0"/>
+                    <Label x:Name="LblCrc"  Text="Enabled" Grid.Row="2" Grid.Column="1"/>
+                    <Label Text="TMP_CLK:" ToolTipProperties.Text="Refreshrate of the LED temp sensor" Grid.Row="3" Grid.Column="0"/>
+                    <Label x:Name="LblTempClk" Text="2.4 Khz" Grid.Row="3" Grid.Column="1"/>
                 </Grid>
 
+                <!--Error-->
                 <Grid Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="1">
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -229,16 +250,17 @@
                         <ColumnDefinition Width="75"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Label Text="CE:" Grid.Row="0" Grid.Column="0"/>
-                    <Label Text="rais" Grid.Row="0" Grid.Column="1"/>
-                    <Label Text="LOS:" Grid.Row="1" Grid.Column="0"/>
-                    <Label Text="rais and sleep" Grid.Row="1" Grid.Column="1"/>
-                    <Label Text="OT:" Grid.Row="2" Grid.Column="0"/>
-                    <Label Text="rais" Grid.Row="2" Grid.Column="1"/>
-                    <Label Text="UV:" Grid.Row="3" Grid.Column="0"/>
-                    <Label Text="rais" Grid.Row="3" Grid.Column="1"/>
+                    <Label Text="CE:" ToolTipProperties.Text="Communication fault" Grid.Row="0" Grid.Column="0"/>
+                    <Label x:Name="LblSetupCe" Text="raise" Grid.Row="0" Grid.Column="1"/>
+                    <Label Text="LOS:" ToolTipProperties.Text="LED fault" Grid.Row="1" Grid.Column="0"/>
+                    <Label x:Name="LblSetupLos" Text="raise and sleep" Grid.Row="1" Grid.Column="1"/>
+                    <Label Text="OT:" ToolTipProperties.Text="Overtemperature" Grid.Row="2" Grid.Column="0"/>
+                    <Label x:Name="LblSetupOt" Text="raise" Grid.Row="2" Grid.Column="1"/>
+                    <Label Text="UV:" ToolTipProperties.Text="Undervoltage" Grid.Row="3" Grid.Column="0"/>
+                    <Label x:Name="LblSetupUv" Text="raise" Grid.Row="3" Grid.Column="1"/>
                 </Grid>
-
+                
+                <!--PWM-->
                 <Grid Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="1">
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -257,6 +279,62 @@
                     <Label Text="Blue:" Grid.Row="2" Grid.Column="0"/>
                     <Label x:Name="lblPwmBlue" Text="12554" Grid.Row="2" Grid.Column="1"/>
                 </Grid>
+
+                <!--Status-->
+                <Grid Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Label Text="State:" Grid.Row="0" Grid.Column="0"/>
+                    <Label x:Name="LblState" Text="Active" Grid.Row="0" Grid.Column="1"/>
+                    <Label Text="OTPCRC:" Grid.Row="1" Grid.Column="0"/>
+                    <Label x:Name="LblOtpCrc" Text="true" Grid.Row="1" Grid.Column="1"/>
+                    <Label Text="COM:" Grid.Row="2" Grid.Column="0"/>
+                    <Label x:Name="LblCom" Text="bidirectional" Grid.Row="2" Grid.Column="1"/>
+                    <Label Text="Error:" ToolTipProperties.Text="CE | LOS | OT | UV" Grid.Row="3" Grid.Column="0"/>
+                    <HorizontalStackLayout Grid.Row="3" Grid.Column="1" ToolTipProperties.Text="CE | LOS | OT | UV">
+                        <Label x:Name="LblStatusCe" Text="0|"/>
+                        <Label x:Name="LblStatusLos" Text="0|"/>
+                        <Label x:Name="LblStatusOt" Text="0|"/>
+                        <Label x:Name="LblStatusUv" Text="1"/>
+                    </HorizontalStackLayout>
+                </Grid>
+                
+                <!--Refresh buttons-->
+                <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="5" >
+                    <Grid x:Name="Rolf">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button class="Refresh" ClassId="BtnRefreshComstats" Text="Refresh" Clicked="Refresh"  Grid.Row="0" Grid.Column="0" HorizontalOptions="Start"/>
+                        <Label x:Name="LblRefreshComstats" Text="00:00:00" Grid.Row="0" Grid.Column="0" Margin="0, 0, 45, 0" HorizontalOptions="End" VerticalOptions="Center" ToolTipProperties.Text="Last updated at"/>
+                        <Button class="Refresh" ClassId="BtnRefreshSetup" Text="Refresh" Clicked="Refresh"  Grid.Row="0" Grid.Column="1"  HorizontalOptions="Start"/>
+                        <Label x:Name="LblRefreshSetup" Text="00:00:00" Grid.Row="0" Grid.Column="1" Margin="0, 0, 45, 0" HorizontalOptions="End" VerticalOptions="Center" ToolTipProperties.Text="Last updated at"/>
+                        <Button class="Refresh" ClassId="BtnRefreshError" Text="Refresh" Clicked="Refresh"  Grid.Row="0" Grid.Column="2"  HorizontalOptions="Start"/>
+                        <Label x:Name="LblRefreshError" Text="00:00:00" Grid.Row="0" Grid.Column="2" Margin="0, 0, 45, 0" HorizontalOptions="End" VerticalOptions="Center" ToolTipProperties.Text="Last updated at"/>
+                        <Button class="Refresh" ClassId="BtnRefreshPwm" Text="Refresh" Clicked="Refresh" Grid.Row="0" Grid.Column="3"  HorizontalOptions="Start"/>
+                        <Label x:Name="LblRefreshPwm" Text="00:00:00" Grid.Row="0" Grid.Column="3" Margin="0, 0, 45, 0" HorizontalOptions="End" VerticalOptions="Center" ToolTipProperties.Text="Last updated at"/>
+                        <Button class="Refresh" ClassId="BtnRefreshStatus" Text="Refresh" Clicked="Refresh" Grid.Row="0" Grid.Column="4"  HorizontalOptions="Start"/>
+                        <Label x:Name="LblRefreshStatus" Text="00:00:00" Grid.Row="0" Grid.Column="4" Margin="0, 0, 45, 0" HorizontalOptions="End" VerticalOptions="Center" ToolTipProperties.Text="Last updated at"/>
+                    </Grid>
+                </Border>
+                
+                <Label x:Name="LblLedState" Text="Dummy" Grid.Row="4" Grid.Column="0" TextColor="Red"/>
             </Grid>
         </Border>
 
@@ -267,87 +345,65 @@
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition /> <!--Slider-->
                 <ColumnDefinition Width="60"/> <!--Lable-->
                 <ColumnDefinition Width="250"/> <!--Color Box-->
             </Grid.ColumnDefinitions>
-            <Slider x:Name="sliderRed" Maximum="32768" MinimumTrackColor="Red" MaximumTrackColor="White" ValueChanged="OnSliderRedChanged" 
+            <Slider ClassId="sliderRed"  x:Name="sliderRed" Maximum="32768" MinimumTrackColor="Red" MaximumTrackColor="White" ValueChanged="OnSliderChanged" 
                     Grid.Row="0" Grid.Column="0"/>
             <Label Padding="10,5,0,0" x:Name="lableRed" Text="0" Grid.Row="0" Grid.Column="1"/>
-            
-            <Slider x:Name="sliderGreen" Maximum="32768" MinimumTrackColor="Green" MaximumTrackColor="White" ValueChanged="OnSliderGreenChanged" 
+
+            <Slider ClassId="sliderGreen" x:Name="sliderGreen" Maximum="32768" MinimumTrackColor="Green" MaximumTrackColor="White" ValueChanged="OnSliderChanged" 
                     Grid.Row="1" Grid.Column="0"/>
             <Label Padding="10,5,0,0" x:Name="lableGreen" Text="0" Grid.Row="1" Grid.Column="1"/>
-            
-            <Slider x:Name="sliderBlue" Maximum="32768" MinimumTrackColor="Blue" MaximumTrackColor="White" ValueChanged="OnSliderBlueChanged" 
+
+            <Slider ClassId="sliderBlue" x:Name="sliderBlue" Maximum="32768" MinimumTrackColor="Blue" MaximumTrackColor="White" ValueChanged="OnSliderChanged" 
                     Grid.Row="2" Grid.Column="0"/>
             <Label Padding="10,5,0,0" x:Name="lableBlue" Text="0" Grid.Row="2" Grid.Column="1"/>
-            
-            <Slider x:Name="sliderDelay" Value="1000" Maximum="10000" MinimumTrackColor="Yellow" MaximumTrackColor="White" ValueChanged="OnSliderDelayChanged" 
-                    Grid.Row="4" Grid.Column="0"/>
+
+            <Slider ClassId="sliderDelay" x:Name="sliderDelay" Value="1000" Maximum="10000" MinimumTrackColor="Yellow" MaximumTrackColor="White" ValueChanged="OnSliderChanged" 
+                    Grid.Row="3" Grid.Column="0"/>
             <Label Padding="10,5,0,0" x:Name="lableDelay" Text="0" Grid.Row="3" Grid.Column="1" />
+
+            <CheckBox x:Name="CbLiveUpdate" Color="Green" Grid.Row="3" Grid.Column="3" />
+            <Label Text="Live Update" VerticalOptions="Center" Margin="35,0,0,0" Grid.Row="3" Grid.Column="3" />
             
-            <CheckBox Color="Green" Grid.Row="4" Grid.Column="3" />
-            <Label Text="Live Update" VerticalOptions="Center" Margin="35,0,0,0" Grid.Row="4" Grid.Column="3" />
-            
-            <Border  x:Name="colorBoxView" StrokeThickness="1" Stroke="#FFFFFF" Grid.Row="0" Grid.Column="2" Grid.RowSpan="3">
+            <Border  x:Name="colorBoxView" StrokeThickness="1" Stroke="#FFFFFF" Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" ToolTipProperties.Text="LED color preview">
                 <Label Text="#000000" x:Name="colorBoxValue"/>
             </Border>
-        </Grid>
-
-        <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="6" Grid.ColumnSpan="1" Padding="10" HorizontalOptions="Center">
-            <Grid>
+            
+            <!--Current Limit-->
+            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="1" ToolTipProperties.Text="Max current for each Color">
+            <Grid >
                 <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="35"/>
-                    <ColumnDefinition/>
+                    <ColumnDefinition />
+                    <ColumnDefinition  Width="35"/>
+                    <ColumnDefinition />
+                    <ColumnDefinition  Width="35"/>
+                    <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <CheckBox x:Name="cbStateIp" Grid.Row="0" Grid.Column="0" Color="Green"/>
-                <CheckBox x:Name="cbStateLedCount"  Grid.Row="1" Grid.Column="0" Color="Green"/>
-                <CheckBox Grid.Row="2" Grid.Column="0" Color="Green"/>
-                <CheckBox Grid.Row="3" Grid.Column="0" Color="Green"/>
-                <CheckBox Grid.Row="4" Grid.Column="0" Color="Green"/>
-                <CheckBox Grid.Row="5" Grid.Column="0" Color="Green"/>
-                <Label Text="Ip Address set" Grid.Row="0" Grid.Column="1" VerticalTextAlignment="Center"/>
-                <Label Text="Number of LEDs set" Grid.Row="1" Grid.Column="1" VerticalTextAlignment="Center"/>
-                <Label Text="Light init" Grid.Row="2" Grid.Column="1" VerticalTextAlignment="Center"/>
-                <Label Text="LEDs init" Grid.Row="3" Grid.Column="1" VerticalTextAlignment="Center"/>
-                <Label Text="Ip Address Set" Grid.Row="4" Grid.Column="1" VerticalTextAlignment="Center"/>
-                <Label Text="Ip Address Set" Grid.Row="5" Grid.Column="1" VerticalTextAlignment="Center"/>
+                
+                <CheckBox x:Name="cbCurrentRed" Color="RED" Grid.Row="0" Grid.Column="0" CheckedChanged="cbCurrentRedChanged" />
+                <Label x:Name="lblCurrentRed" Text="Red 50mA" VerticalOptions="Center" 
+                       Grid.Row="0" Grid.Column="1" />
+                <CheckBox x:Name="cbCurrentGreen" Color="Green" Grid.Row="0" Grid.Column="2" CheckedChanged="cbCurrentGreenChanged" />
+                <Label x:Name="lblCurrentGreen" Text="Green 50mA" VerticalOptions="Center" 
+                       Grid.Row="0" Grid.Column="3" />
+                <CheckBox x:Name="cbCurrentBlue" Color="Blue" Grid.Row="0" Grid.Column="4" CheckedChanged="cbCurrentBlueChanged" />
+                <Label x:Name="lblCurrentBlue" Text="Blue 50mA" VerticalOptions="Center"
+                       Grid.Row="0" Grid.Column="5" />
             </Grid>
-        </Border>
+            </Border>
+            <Button Grid.Row="4" Grid.Column="3" Text="Update" Clicked="UpdateColor"/>
 
-        <Border Grid.Column="4" Grid.Row="3" Grid.ColumnSpan="2" >
-            <Grid >
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-
-                <Button Text="Send Command"
-                        Grid.Row="0" Grid.Column="0"/>
-                <Button Text="Lauflicht"
-                        Grid.Row="1" Grid.Column="0"/>
-                <Button Text="Static Color"
-                        Grid.Row="0" Grid.Column="1"/>
-                <Button Text="Random"
-                        Grid.Row="1" Grid.Column="1"/>
-            </Grid>
-        </Border>
-
+        </Grid>
 
         <!--List of active commands-->
         <VerticalStackLayout Grid.Column="6" Grid.Row="5">
@@ -355,14 +411,10 @@
 
             <Border Grid.Column="6" Grid.Row="5" MinimumHeightRequest="150" Margin="0,0,10,0">
                 <VerticalStackLayout>
-                    <ListView x:Name="runningCommands" ItemsSource="{Binding LED}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <TextCell TextColor="Red" Text="{Binding Command}"
-                                          Detail="{Binding Time}"/>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
+                    <ListView  x:Name="runningCommandsContainer">
+                        
                     </ListView>
+                    <Label x:Name="runningCommands" Text="dummy" TextColor="Red"/>
                 </VerticalStackLayout>
 
             </Border>
