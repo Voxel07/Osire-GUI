@@ -58,6 +58,7 @@ namespace Osire.Models
         public byte Temperature { get; set; }
         public byte[] OTTH { get; set; }
         public byte Setup { get; set; }
+        public byte[] OTP { get; set; }
 
         public UInt16 Delay { get; set; }
         public OSP_ERROR_CODE Error { get; set; }
@@ -67,6 +68,9 @@ namespace Osire.Models
         public Message()
         {
             CurrentRed = true; CurrentGreen = true; CurrentBlue = true;
+            OTTH = new byte[3];
+            OTP = new byte[32];
+            Setup = 0x32; //Default config
         }
 
 
@@ -77,10 +81,7 @@ namespace Osire.Models
             MemoryStream stream= new();
             BinaryWriter writer = new(stream);
 
-            //Set MSB of the pwm value to slect max current
-            PwmRed |= (ushort)((CurrentRed ? 1 : 0) << 15);
-            PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
-            PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
+         
 
             try
             {
@@ -91,42 +92,20 @@ namespace Osire.Models
                 writer.Write(Address);          //[4]+[5]
                 switch (Command)
                 {
-                    case PossibleCommands.RESET_LED:
-                        break;
-                    case PossibleCommands.CLEAR_ERROR:
-                        break;
-                    case PossibleCommands.INITBIDIR:
-                        break;
-                    case PossibleCommands.GOSLEEP:
-                        break;
-                    case PossibleCommands.GOACTIVE:
-                        break;
-                    case PossibleCommands.GODEEPSLEEP:
-                        break;
-                    case PossibleCommands.READSTATUS:
-                        break;
-                    case PossibleCommands.READTEMPST:
-                        break;
-                    case PossibleCommands.READCOMST:
-                        break;
-                    case PossibleCommands.READLEDST:
-                        break;
-                    case PossibleCommands.READOTTH:
-                        break;
                     case PossibleCommands.SETOTTH:
-                        break;
-                    case PossibleCommands.READSETUP:
+                        writer.Write(OTTH);             //[6]
                         break;
                     case PossibleCommands.SETSETUP:
-                        break;
-                    case PossibleCommands.READPWM:
+                        writer.Write(Setup);            //[6]
                         break;
                     case PossibleCommands.SETPWM:
+                        //Set MSB of the pwm value to slect max current
+                        PwmRed |= (ushort)((CurrentRed ? 1 : 0) << 15);
+                        PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
+                        PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
                         writer.Write(PwmRed);           //[6]+[7]
                         writer.Write(PwmGreen);         //[8]+[9]
                         writer.Write(PwmBlue);          //[10]+[11]
-                        break;
-                    case PossibleCommands.READOTP:
                         break;
                     default:
                         break;
@@ -150,9 +129,14 @@ namespace Osire.Models
         {
             this.PSI = data[0];                             //[0]
 
-            this.Crc = BitConverter.ToUInt16(data, this.PSI - 2); //[PSI-1][PSI]
+            this.Crc = BitConverter.ToUInt16(data, this.PSI - 2); //[PSI-1][PSI] //-3 -> sizeof(crc) + preamble
             Array.Resize(ref data, data.Length - 2);
-            if (this.Crc != CalculateCRC(data)) return false;
+            if (this.Crc != CalculateCRC(data))
+            {
+                this.Error = OSP_ERROR_CODE.OSP_ERROR_CRC;
+                return false;
+            
+            }
 
             this.Command = (PossibleCommands)data[1];       //[1]
             this.Error = (OSP_ERROR_CODE)data[2];           //[2]
@@ -165,7 +149,10 @@ namespace Osire.Models
                 case PossibleCommands.CLEAR_ERROR:
                     break;
                 case PossibleCommands.INITBIDIR:
-                    this.LedCount = BitConverter.ToUInt16(data, 5);     //[5][6]
+                    this.Temperature = data[5]; 
+                    this.Status = data[6];
+                    this.LedCount = BitConverter.ToUInt16(data, 7);     //[7][8]
+                    this.Address = this.LedCount;
                     break;
                 case PossibleCommands.INITLOOP:
                     break;
@@ -176,6 +163,8 @@ namespace Osire.Models
                 case PossibleCommands.GODEEPSLEEP:
                     break;
                 case PossibleCommands.READSTATUS:
+                    this.Status = data[5];
+                    
                     break;
                 case PossibleCommands.READTEMPST:
                     break;
@@ -183,10 +172,15 @@ namespace Osire.Models
                     this.ComST = data[5];
                     break;
                 case PossibleCommands.READLEDST:
+                    this.LedStatus = data[5];
                     break;
                 case PossibleCommands.READTEMP:
+                    this.Temperature = data[5];
                     break;
                 case PossibleCommands.READOTTH:
+                    this.OTTH[0] = data[5];
+                    this.OTTH[1] = data[6];
+                    this.OTTH[2] = data[7];
                     break;
                 case PossibleCommands.SETOTTH:
                     break;
@@ -196,13 +190,17 @@ namespace Osire.Models
                 case PossibleCommands.SETSETUP:
                     break;
                 case PossibleCommands.READPWM:
-                    this.PwmRed = BitConverter.ToUInt16(data, 5);
-                    this.PwmGreen = BitConverter.ToUInt16(data, 7);
-                    this.PwmBlue = BitConverter.ToUInt16(data, 9);
+                    this.PwmRed = BitConverter.ToUInt16(data, 5); //[5][6]
+                    this.PwmGreen = BitConverter.ToUInt16(data, 7); //[7][8] 
+                    this.PwmBlue = BitConverter.ToUInt16(data, 9); //[9][10]
                     break;
                 case PossibleCommands.SETPWM:
                     break;
                 case PossibleCommands.READOTP:
+                    for (int i = 5; i < data.Length; i++)
+                    {
+                        this.OTP[i - 5] = data[i];
+                    }
                     break;
                 default:
                     break;
@@ -227,27 +225,12 @@ namespace Osire.Models
             this.Address = 1; //Init command starts at first LED
         }
 
-        public void setCommand(PossibleCommands cmd)
+        public void SetMessateToDefaultConf()
         {
-            this.Command = cmd;
-
-            switch (this.Command)
-            {
-                case PossibleCommands.INITBIDIR:
-                    PSI = 2;
-                    break;
-                case PossibleCommands.GODEEPSLEEP:
-                    PSI = 0;
-                    break;
-                case PossibleCommands.SETPWM:
-                    PSI = 0;
-                    break;
-                case PossibleCommands.READPWM:
-                    PSI = 6;
-                    break;
-                default:
-                    break;
-            }
+            this.Command = PossibleCommands.SETSETUP;
+            this.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+            this.PSI = 8;
+            this.Address = 0;
         }
 
         public static ushort CalculateCRC(byte[] data)

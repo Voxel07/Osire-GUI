@@ -13,6 +13,7 @@ namespace Osire.Models
         public List<LED> LEDs { get; set; }
         public UDP connection;
         public UART connection2 = new UART();
+        public ushort SelectedLed { get; set; }
 
         //Configuration
         public bool IpSet { get; set; }
@@ -34,21 +35,20 @@ namespace Osire.Models
 
         public void SetLeds(ushort cnt)
         {
-            this.LEDs = Enumerable.Repeat(new LED(), cnt).ToList();
+            this.LEDs = new List<LED>(cnt);
+            for (int i = 0; i < cnt; i++)
+            {
+                LEDs.Add(new LED()); 
+            }
             this.LedCount= cnt;
         }
         
-        public bool InitLeds(ushort cnt)
+        public void InitLeds()
         {
-            if(this.LedCount < cnt)
-            {
-                return false;
-            }
-            for (int i = 0; i < cnt; i++)
+            for (int i = 0; i < this.LedCount; i++)
             {
                 LEDs[i].Address= (ushort)(i+1);
             }
-            return true;
         }
 
         public void updateLED(UInt16 address)
