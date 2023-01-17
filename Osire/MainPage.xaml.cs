@@ -11,6 +11,9 @@ using System.IO.Ports;
 using System.Text;
 using static Osire.Models.Message;
 using Microsoft.Maui.Animations;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
+using Osire.Pages;
 
 namespace Osire;
 
@@ -19,6 +22,23 @@ public partial class MainPage : ContentPage
     public MainPage()
     {
         InitializeComponent();
+    }
+     
+    private void Reset(object sender , EventArgs e)
+    {
+        Microsoft.Maui.Controls.Application.Current.MainPage = new MainPage();
+    }
+
+    private async void GoToDemosPage(object sender , EventArgs e)
+    {
+        Button btn = sender as Button;
+
+        myMessage.Type = DEMO;
+        myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
+
+        await Task.Run(async () => await SendCommandAsync(btn));
+
+        //Shell.Current.GoToAsync(nameof(Demos));
     }
 
     //Calsses that will be filled with Data  by the UI
@@ -61,6 +81,7 @@ public partial class MainPage : ContentPage
         if (myMessage.Error == 0)
         {
             Light.LedsWereInitialized = true;
+            Light.SetLeds(myMessage.LedCount);
             Light.InitLeds();
             countedLeds.ItemsSource = Light.LEDs;
             cbStateLightInit.IsChecked = true;
@@ -69,7 +90,12 @@ public partial class MainPage : ContentPage
             countedLeds.IsVisible = true;
             ledAddr.IsVisible = true;
             lblledAddr.IsVisible = true;
-           
+
+            if (!UpdateUi())
+            {
+                LblLedState.Text = "Updating the UI failed";
+            }
+
         }
       
     }
@@ -84,7 +110,7 @@ public partial class MainPage : ContentPage
 
         Button btn = sender as Button;
 
-        myMessage.SetMessateToDefaultConf();
+        myMessage.SetMessageToDefaultConf();
 
         await Task.Run(async () => await SendCommandAsync(btn));
 
@@ -93,9 +119,9 @@ public partial class MainPage : ContentPage
             cbStateLightSetup.IsChecked = true;
             BtnActivateLed.IsEnabled = true;
             Light.LedsWereReset = true;
+            CbAutoRefresh.IsEnabled = true;
+
         }
-
-
     }
 
     private async void ActivateLed(object sender, EventArgs e)
@@ -199,7 +225,7 @@ public partial class MainPage : ContentPage
         {
             cbStateLightCount.IsChecked = true;
             Light.LedCountSet = true;
-            Light.SetLeds((ushort)ledCount);
+            //Light.SetLeds((ushort)ledCount);
 
             if (Light.IpSet)
             {
@@ -309,7 +335,7 @@ public partial class MainPage : ContentPage
             LblLedState.Text = "No LED selected";
             return;
         }
-        LED led = Light.LEDs.ElementAt(selectedLed);
+        LED led = Light.LEDs.ElementAt(selectedLed - 1);
 
         switch (cb.ClassId)
         {
@@ -520,14 +546,19 @@ public partial class MainPage : ContentPage
     }
     private async Task DoWorkAsync(CancellationToken cancellationToken)
     {
-        Random random = new Random();
+        Button dummy = new Button();
+
+        myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+        myMessage.PSI = 7;
+        myMessage.Command = PossibleCommands.READTEMPST;
+        myMessage.Address = Light.SelectedLed;
+
         while (!cancellationToken.IsCancellationRequested)
         {
-            Dispatcher.Dispatch(() => lblPwmRed.Text = sliderRed.Value.ToString());
-            Dispatcher.Dispatch(() => lblPwmGreen.Text = sliderGreen.Value.ToString());
-            Dispatcher.Dispatch(() => lblPwmBlue.Text = sliderBlue.Value.ToString());
+            await SendCommandAsync(dummy);
 
-            await Task.Delay(1000);
+            await Task.Delay(1000, cancellationToken);
+            
         }
     }
 
@@ -594,10 +625,14 @@ public partial class MainPage : ContentPage
             Dispatcher.Dispatch(() => LblLedState.Text =""); //clear old error text
         }
 
-        if(!UpdateUi())
+        if(Light.LedsWereInitialized) //Cant update the ui before init is complete
         {
-            Dispatcher.Dispatch(() => LblLedState.Text = "Updating the UI failed");
+            if (!UpdateUi())
+            {
+                Dispatcher.Dispatch(() => LblLedState.Text = "Updating the UI failed");
+            }
         }
+        
 
         Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button after answer is received
         Light.connection2.Waiting = false; //Next command can be send now
@@ -617,7 +652,7 @@ public partial class MainPage : ContentPage
             case PossibleCommands.CLEAR_ERROR:
                 break;
             case PossibleCommands.INITBIDIR:
-                Light.SelectedLed = (ushort)(myMessage.LedCount); 
+                Light.SelectedLed = (ushort)(myMessage.LedCount);
                 led = Light.LEDs.ElementAt(Light.SelectedLed - 1);
                 led.SetTempSt(ref myMessage);
                 Dispatcher.Dispatch(() => LblTemp.Text = led.Temperature + "°C");
@@ -650,6 +685,9 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblStatusOt.Text = led.Error_ot);
                 Dispatcher.Dispatch(() => LblStatusUv.Text = led.Error_ce);
                 break;
+            case PossibleCommands.SETOTTHSR:
+            case PossibleCommands.SETSETUPSR:
+            case PossibleCommands.SETPWMSR:
             case PossibleCommands.READTEMPST:
                 led.SetTempSt(ref myMessage);
                 Dispatcher.Dispatch(() => LblTemp.Text = led.Temperature.ToString());
@@ -660,6 +698,8 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblStatusLos.Text = led.Error_los);
                 Dispatcher.Dispatch(() => LblStatusOt.Text = led.Error_ot);
                 Dispatcher.Dispatch(() => LblStatusUv.Text = led.Error_ce);
+                Dispatcher.Dispatch(() => LblRefreshStatus.Text = led.TimestampStatus);
+                Dispatcher.Dispatch(() => LblRefreshOtth.Text = led.TimeStampTemp);
                 break;
             case PossibleCommands.READCOMST:
                 led.SetComStats(ref myMessage);
@@ -745,35 +785,10 @@ public partial class MainPage : ContentPage
     async void OnSliderChanged(object sender, ValueChangedEventArgs e)
     {
 
-        Slider slider = sender as Slider;
-        switch (slider.ClassId)
-        {
-            case "sliderRed":
-                lableRed.Text = e.NewValue.ToString();
-                myMessage.PwmRed = (ushort)e.NewValue;
-                break;
-            case "sliderGreen":
-                lableGreen.Text = e.NewValue.ToString();
-                myMessage.PwmGreen = (ushort)e.NewValue;
-                break;
-            case "sliderBlue":
-                lableBlue.Text = e.NewValue.ToString();
-                myMessage.PwmBlue = (ushort)e.NewValue;
-                break;
-            case "sliderDelay":
-                lableDelay.Text = e.NewValue.ToString();
-                myMessage.Delay = (ushort)e.NewValue;
-                break;
-            default:
-                break;
-        }
-
-        float red = (float)myMessage.PwmRed / 32767;
-        float green = (float)myMessage.PwmGreen / 32767;
-        float blue = (float)myMessage.PwmBlue / 32767;
-        colorBoxView.BackgroundColor = new Color(red, green, blue);
-        colorBoxValue.TextColor = new Color(1 - red, 1 - green, 1 - blue);
-        colorBoxValue.Text = colorBoxView.BackgroundColor.ToHex().ToString();
+      
+        lableBrightnes.Text = e.NewValue.ToString();
+        myMessage.Lv = (ushort)e.NewValue;
+      
 
         if (CbLiveUpdate.IsChecked)
         {
@@ -787,6 +802,54 @@ public partial class MainPage : ContentPage
             Button btn = new();
             await Task.Run(async () => await SendCommandAsync(btn));
         }
+    }
+
+    private async void OnTab(object sender, TappedEventArgs e)
+    {
+        double maxX = 65535;
+        double maxY = 65535;
+
+        Point? p = e.GetPosition((View)sender);
+
+        double width = img.Width;
+        double heigth = img.Height;
+
+        double currentX = (p.Value.X / width) * maxX;
+        double currentY = maxY - ((p.Value.Y / heigth) * maxY);
+        if (currentX < 0) { currentX = 0; }
+        if (currentY < 0) { currentY = 0; }
+
+        ushort u = (ushort)(currentX);
+        ushort v = (ushort)(currentY);
+
+        LblX.Text = "U: " + u;
+        LblY.Text = "V: " + v;
+        myMessage.U = u;
+        myMessage.V = v;
+
+        //Point? point = e.GetPosition((View)sender);
+        //Ellipse ellipse = new Ellipse
+        //{
+        //    WidthRequest = 10,
+        //    HeightRequest = 10,
+        //    AnchorX = e.GetPosition.((View)sender),
+        //    AnchorY = p.Value.Y
+        //};
+
+        if (CbLiveUpdate.IsChecked)
+        {
+            if (!Light.LedCountSet || !Light.IpSet || !Light.LedsWereReset || !Light.LedsWereInitialized)
+            {
+                lblLightState.Text = "Init not complete";
+                return;
+            }
+            myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+            myMessage.Command = PossibleCommands.SETPWM;
+            myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
+            Button btn = new();
+            await Task.Run(async () => await SendCommandAsync(btn));
+        }
+
     }
 
     private async void UpdateColor(object sender, EventArgs e)

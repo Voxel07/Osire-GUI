@@ -64,26 +64,26 @@ namespace Osire.Models
         public ushort ChipId { get; set; }
         public byte WaverId { get; set; }
 
-        public byte RedDayU { get; set; }
-        public byte RedDayV { get; set; }
-        public ushort RedDayLv { get; set; }
-        public byte RedNightU { get; set; }
-        public byte RedNightV { get; set; }
-        public ushort RedNightLv { get; set; }
+        public float RedDayU { get; set; }
+        public float RedDayV { get; set; }
+        public float RedDayLv { get; set; }
+        public float RedNightU { get; set; }
+        public float RedNightV { get; set; }
+        public float RedNightLv { get; set; }
 
-        public byte GreenDayU { get; set; }
-        public byte GreenDayV { get; set; }
-        public ushort GreenDayLv { get; set; }
-        public byte GreenNightU { get; set; }
-        public byte GreenNightV { get; set; }
-        public ushort GreenNightLv { get; set; }
+        public float GreenDayU { get; set; }
+        public float GreenDayV { get; set; }
+        public float GreenDayLv { get; set; }
+        public float GreenNightU { get; set; }
+        public float GreenNightV { get; set; }
+        public float GreenNightLv { get; set; }
 
-        public byte BlueDayU { get; set; }
-        public byte BlueDayV { get; set; }
-        public ushort BlueDayLv { get; set; }
-        public byte BlueNightU { get; set; }
-        public byte BlueNightV { get; set; }
-        public ushort BlueNightLv { get; set; }
+        public float BlueDayU { get; set; }
+        public float BlueDayV { get; set; }
+        public float BlueDayLv { get; set; }
+        public float BlueNightU { get; set; }
+        public float BlueNightV { get; set; }
+        public float BlueNightLv { get; set; }
 
 
 
@@ -98,27 +98,57 @@ namespace Osire.Models
         {
             ChipId = BitConverter.ToUInt16(msg.OTP, 0);
             WaverId = (byte)((msg.OTP[3]) & 0b00001111) ;
-            
-            RedNightU = msg.OTP[10];
-            RedNightV = msg.OTP[11];
-            RedNightLv = (ushort)(msg.OTP[12] | ((msg.OTP[13] & 0x0F) << 8));
-            RedDayU = msg.OTP[14];
-            RedDayV = msg.OTP[15];
-            RedDayLv = (ushort)(msg.OTP[16] | ((msg.OTP[13] & 0xF0) << 8));
 
-            BlueNightU = msg.OTP[17];
-            BlueNightV = msg.OTP[18];
-            BlueNightLv = (ushort)(msg.OTP[19] | ((msg.OTP[20] & 0x0F) << 8));
-            BlueDayU = msg.OTP[21];
-            BlueDayV = msg.OTP[22];
-            BlueDayLv = (ushort)(msg.OTP[23] | ((msg.OTP[20] & 0xF0) << 8));
+            RedNightU = msg.OTP[10] / 400f;
+            RedNightV = msg.OTP[11] / 400f;
+            RedNightLv = (msg.OTP[13] | ((msg.OTP[12] & 0xF0) << 4));
+            RedDayU = msg.OTP[14] / 400f;
+            RedDayV = msg.OTP[15] / 400f;
+            RedDayLv = (msg.OTP[16] | ((msg.OTP[12] & 0x0F) << 8));
 
-            GreenNightU = msg.OTP[24];
-            GreenNightV = msg.OTP[25];
-            GreenNightLv = (ushort)(msg.OTP[26] | ((msg.OTP[27] & 0x0F) << 8));
-            GreenDayU = msg.OTP[28];
-            GreenDayV = msg.OTP[29];
-            GreenDayLv = (ushort)(msg.OTP[30] | ((msg.OTP[26] & 0xF0) << 8));
+            BlueNightU = msg.OTP[17] / 400f;
+            BlueNightV = msg.OTP[18] / 400f;
+            BlueNightLv = (msg.OTP[19] | ((msg.OTP[20] & 0xF0) << 4));
+            BlueDayU = msg.OTP[21] / 400f;
+            BlueDayV = msg.OTP[22] / 400f;
+            BlueDayLv = (msg.OTP[23] | ((msg.OTP[20] & 0x0F) << 8));
+
+            GreenNightU = msg.OTP[24] / 400f;
+            GreenNightV = msg.OTP[25] / 400f;
+            GreenNightLv = (msg.OTP[26] | ((msg.OTP[27] & 0xF0) << 4));
+            GreenDayU = msg.OTP[28] / 400f;
+            GreenDayV = msg.OTP[29] / 400f;
+            GreenDayLv = (msg.OTP[30] | ((msg.OTP[27] & 0x0F) << 8));
+
+            using (StreamWriter writer = new StreamWriter("C:\\Programmieren\\Osire\\UVL.txt", true))
+            {
+                writer.WriteLine(ChipId);
+                writer.WriteLine("--Red--");
+                writer.WriteLine(RedDayLv);
+                writer.WriteLine(RedDayU);
+                writer.WriteLine(RedDayV);
+                writer.WriteLine(RedNightLv);
+                writer.WriteLine(RedNightU);
+                writer.WriteLine(RedNightV);
+                writer.WriteLine("--Green--");
+                writer.WriteLine(GreenDayLv);
+                writer.WriteLine(GreenDayU);
+                writer.WriteLine(GreenDayV);
+                writer.WriteLine(GreenNightLv);
+                writer.WriteLine(GreenNightU);
+                writer.WriteLine(GreenNightV);
+                writer.WriteLine("--Blue--");
+
+                writer.WriteLine(BlueDayLv);
+                writer.WriteLine(BlueDayU);
+                writer.WriteLine(BlueDayV);
+                writer.WriteLine(BlueNightLv);
+                writer.WriteLine(BlueNightU);
+                writer.WriteLine(BlueNightV);
+                writer.WriteLine("---------------------");
+                writer.WriteLine();
+
+            }
 
         }
 
@@ -207,8 +237,8 @@ namespace Osire.Models
 
         public void SetOtth(ref Message msg)
         {
-            OtLowValue = (byte)(msg.OTTH.ElementAt(0) - 113);
-            OtHighValue = (byte)(msg.OTTH.ElementAt(1) - 113);
+            OtHighValue = (byte)(msg.OTTH.ElementAt(0) - 113);
+            OtLowValue = (byte)(msg.OTTH.ElementAt(1) - 113);
             State = (byte)((msg.OTTH.ElementAt(2)) & 0b00000011) switch
             {
                 0 => "1 CYCLE",

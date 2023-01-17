@@ -28,6 +28,7 @@ namespace Osire.Models
             remotEndPoint = new IPEndPoint(IPAddress.Parse(Ip), PortSend);
             localEndPoint = new IPEndPoint(IPAddress.Any, PortReceive);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         }
 
         public void SendMessage(byte[] data)
@@ -53,6 +54,11 @@ namespace Osire.Models
             Waiting = false; //New command can be send now
             Array.Resize(ref data, (data[1]+1)); //Cut data to size
             return data.Skip(1).ToArray(); //remove preamble 
+        }
+
+        public void Dispose()
+        {
+            socket?.Dispose();
         }
     }
 }

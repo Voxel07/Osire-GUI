@@ -27,11 +27,15 @@ namespace Osire.Models
         {
             RESET_LED, CLEAR_ERROR, INITBIDIR, INITLOOP, GOSLEEP, GOACTIVE, GODEEPSLEEP,
             READSTATUS = 0x40, READTEMPST = 0x42, READCOMST = 0x44, READLEDST = 0x46, READTEMP = 0x48, READOTTH = 0x4A, SETOTTH,
-            READSETUP, SETSETUP, READPWM, SETPWM, READOTP = 0x58
+            READSETUP, SETSETUP, READPWM, SETPWM, SETSETUPSR, SETPWMSR, SETOTTHSR, READOTP = 0x58
         }
         public enum MessageTypes
         {
             COMMAND, COMMAND_WITH_RESPONSE, DEMO = 222
+        }
+        public enum PossibleDemos
+{
+            STATIC_COLOR, LED_STRIPE, DIMING
         }
 
         public PossibleCommands Command { get; set; }
@@ -51,6 +55,9 @@ namespace Osire.Models
         public UInt16 PwmGreen { get; set; }
         public UInt16 PwmBlue { get; set; }
         public UInt16 LedCount { get; set; }
+        public ushort U { get; set; }
+        public ushort V { get; set; }
+        public ushort Lv { get; set; }
 
         public byte ComST { get; set; }
         public byte Status { get; set; }
@@ -93,19 +100,22 @@ namespace Osire.Models
                 switch (Command)
                 {
                     case PossibleCommands.SETOTTH:
+                    case PossibleCommands.SETOTTHSR:
                         writer.Write(OTTH);             //[6]
                         break;
                     case PossibleCommands.SETSETUP:
+                    case PossibleCommands.SETSETUPSR:
                         writer.Write(Setup);            //[6]
                         break;
                     case PossibleCommands.SETPWM:
+                    case PossibleCommands.SETPWMSR:
                         //Set MSB of the pwm value to slect max current
-                        PwmRed |= (ushort)((CurrentRed ? 1 : 0) << 15);
-                        PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
-                        PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
-                        writer.Write(PwmRed);           //[6]+[7]
-                        writer.Write(PwmGreen);         //[8]+[9]
-                        writer.Write(PwmBlue);          //[10]+[11]
+                        //U |= (ushort)((CurrentRed ? 1 : 0) << 15);
+                        //V |= (ushort)((CurrentGreen ? 1 : 0) << 15);
+                        //Lv |= (ushort)((CurrentBlue ? 1 : 0) << 15);
+                        writer.Write(U);            //[6]+[7]
+                        writer.Write(V);            //[8]+[9]
+                        writer.Write(Lv);           //[10]+[11]
                         break;
                     default:
                         break;
@@ -164,9 +174,13 @@ namespace Osire.Models
                     break;
                 case PossibleCommands.READSTATUS:
                     this.Status = data[5];
-                    
                     break;
+                case PossibleCommands.SETOTTHSR:
+                case PossibleCommands.SETSETUPSR:
+                case PossibleCommands.SETPWMSR:
                 case PossibleCommands.READTEMPST:
+                    this.Temperature = data[5];
+                    this.Status = data[6];
                     break;
                 case PossibleCommands.READCOMST:
                     this.ComST = data[5];
@@ -225,7 +239,7 @@ namespace Osire.Models
             this.Address = 1; //Init command starts at first LED
         }
 
-        public void SetMessateToDefaultConf()
+        public void SetMessageToDefaultConf()
         {
             this.Command = PossibleCommands.SETSETUP;
             this.Type = MessageTypes.COMMAND_WITH_RESPONSE;

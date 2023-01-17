@@ -14,7 +14,6 @@ namespace Osire.Models
         public UDP connection;
         public UART connection2 = new UART();
         public ushort SelectedLed { get; set; }
-
         //Configuration
         public bool IpSet { get; set; }
         public bool LedCountSet { get; set; }
@@ -30,7 +29,12 @@ namespace Osire.Models
         }
         public void SetIp(string ip)
         {
+            if(connection != null)
+            {
+                connection.Dispose();
+            }
             connection = new UDP(ip);
+
         }
 
         public void SetLeds(ushort cnt)
