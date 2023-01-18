@@ -12,6 +12,9 @@ namespace Osire.Models
         public ushort V { get; set; }
         public ushort Lv { get; set; }
 
+        public myColor()
+        { }
+
         public myColor(ushort U, ushort V, ushort Lv) 
         {
             this.U = U;

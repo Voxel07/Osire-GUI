@@ -101,24 +101,24 @@ namespace Osire.Models
 
             RedNightU = msg.OTP[10] / 400f;
             RedNightV = msg.OTP[11] / 400f;
-            RedNightLv = (msg.OTP[13] | ((msg.OTP[12] & 0xF0) << 4));
+            RedNightLv = (msg.OTP[13] | ((msg.OTP[12] & 0x0F) << 8));
             RedDayU = msg.OTP[14] / 400f;
             RedDayV = msg.OTP[15] / 400f;
-            RedDayLv = (msg.OTP[16] | ((msg.OTP[12] & 0x0F) << 8));
+            RedDayLv = (msg.OTP[16] | ((msg.OTP[12] & 0xF0) << 4));
 
             BlueNightU = msg.OTP[17] / 400f;
             BlueNightV = msg.OTP[18] / 400f;
-            BlueNightLv = (msg.OTP[19] | ((msg.OTP[20] & 0xF0) << 4));
+            BlueNightLv = (msg.OTP[19] | ((msg.OTP[20] & 0x0F) << 8));
             BlueDayU = msg.OTP[21] / 400f;
             BlueDayV = msg.OTP[22] / 400f;
-            BlueDayLv = (msg.OTP[23] | ((msg.OTP[20] & 0x0F) << 8));
+            BlueDayLv = (msg.OTP[23] | ((msg.OTP[20] & 0xF0) << 4));
 
             GreenNightU = msg.OTP[24] / 400f;
             GreenNightV = msg.OTP[25] / 400f;
-            GreenNightLv = (msg.OTP[26] | ((msg.OTP[27] & 0xF0) << 4));
+            GreenNightLv = (msg.OTP[26] | ((msg.OTP[27] & 0x0F) << 8));
             GreenDayU = msg.OTP[28] / 400f;
             GreenDayV = msg.OTP[29] / 400f;
-            GreenDayLv = (msg.OTP[30] | ((msg.OTP[27] & 0x0F) << 8));
+            GreenDayLv = (msg.OTP[30] | ((msg.OTP[27] & 0xF0) << 4));
 
             using (StreamWriter writer = new StreamWriter("C:\\Programmieren\\Osire\\UVL.txt", true))
             {

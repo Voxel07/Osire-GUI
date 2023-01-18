@@ -31,14 +31,25 @@ public partial class MainPage : ContentPage
 
     private async void GoToDemosPage(object sender , EventArgs e)
     {
+        //Button btn = sender as Button;
+
+        //myMessage.Type = DEMO;
+        //myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
+
+        ////await Task.Run(async () => await SendCommandAsync(btn));
+        //await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+
+        Shell.Current.GoToAsync(nameof(Demos));
+    }
+
+    private async void DemoPingPong(object sender, EventArgs e)
+    {
         Button btn = sender as Button;
 
         myMessage.Type = DEMO;
-        myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
+        myMessage.Command = (PossibleCommands)PossibleDemos.PINGPONG;
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        await Task.Run(async () => await SendCommandAsync(btn));
-
-        //Shell.Current.GoToAsync(nameof(Demos));
     }
 
     //Calsses that will be filled with Data  by the UI
@@ -55,7 +66,8 @@ public partial class MainPage : ContentPage
         }
 
         myMessage.SetMessageToReset();
-        await Task.Run(async () => await SendCommandAsync(btn));
+        //await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
         if (myMessage.Error == 0)
         {
@@ -76,7 +88,7 @@ public partial class MainPage : ContentPage
         Button btn = sender as Button;
 
         myMessage.SetMessageToInit();
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
         if (myMessage.Error == 0)
         {
@@ -112,7 +124,7 @@ public partial class MainPage : ContentPage
 
         myMessage.SetMessageToDefaultConf();
 
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
         if (myMessage.Error == 0)
         {
@@ -142,7 +154,7 @@ public partial class MainPage : ContentPage
             BtnActivateLed.Text = "On";
             myMessage.Command = PossibleCommands.GOACTIVE;
         }
-            await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
 
     private async void ToggleLed(object sender, EventArgs e)
@@ -163,7 +175,7 @@ public partial class MainPage : ContentPage
             BtnToggleLed.Text = "On";
         }
 
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
     }
 
@@ -298,7 +310,7 @@ public partial class MainPage : ContentPage
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 7; // PSI (1) + Type (1) + Command (1) + Address (2) +  CRC (2)
 
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
     }
     private async void SetCommand(object sender , EventArgs e)
@@ -322,7 +334,7 @@ public partial class MainPage : ContentPage
             default:
                 break;
         }
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
 
     private async void SetSetupChanged(object sender, CheckedChangedEventArgs e)
@@ -451,7 +463,7 @@ public partial class MainPage : ContentPage
         myMessage.Command = PossibleCommands.SETSETUP;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 8;
-        await Task.Run(async () => await SendCommandAsync(dummy));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
 
     }
 
@@ -517,7 +529,7 @@ public partial class MainPage : ContentPage
         myMessage.Command = PossibleCommands.SETOTTH;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 10;
-        await Task.Run(async () => await SendCommandAsync(dummy));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
     }
 
 
@@ -562,17 +574,33 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private Task _previousCommand;
+
+    public async Task ExecuteCommandAsync(Func<Task> command)
+    {
+
+        if (_previousCommand != null)
+        {
+            Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
+            await _previousCommand;
+        }
+        _previousCommand = command();
+        await _previousCommand;
+        Dispatcher.Dispatch(() => lblLightState.Text = "");
+
+    }
+
     private async Task<bool> SendCommandAsync(Button btn)
     {
         //Check if a command is still running
-        if (Light.connection2.Waiting)
-        {
-            Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
-            return false;
-        }
+        //if (Light.connection2.Waiting)
+        //{
+        //    Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
+        //    return false;
+        //}
         Dispatcher.Dispatch(() => btn.IsEnabled = false); //Disable the button
 
-        Light.connection.Waiting = true; //Block till command is complete
+        //Light.connection.Waiting = true; //Block till command is complete
         Dispatcher.Dispatch(() => runningCommands.Text = myMessage.getCommand()); //Update Ui 
        
         Light.connection.SendMessage(myMessage.Serialize()); //MSG -> Byte[] //Send message
@@ -605,12 +633,12 @@ public partial class MainPage : ContentPage
         {
             ans += tmp[i].ToString() + "|";
         }
-        Dispatcher.Dispatch(() => lblLightState.Text = "Antwort: " + ans);
+        Dispatcher.Dispatch(() => LblRawAnswer.Text = "Antwort: " + ans);
 
         //Byte[] -> MSG
         if (!myMessage.DeSerialize(tmp))
         {
-            Dispatcher.Dispatch(() => lblLightState.Text = "CRC Error");
+            Dispatcher.Dispatch(() => LblRawAnswer.Text = "CRC Error");
             return false;
         }
 
@@ -635,7 +663,7 @@ public partial class MainPage : ContentPage
         
 
         Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button after answer is received
-        Light.connection2.Waiting = false; //Next command can be send now
+        //Light.connection2.Waiting = false; //Next command can be send now
         //Everything worked :)
         return true;
     }
@@ -784,8 +812,6 @@ public partial class MainPage : ContentPage
 
     async void OnSliderChanged(object sender, ValueChangedEventArgs e)
     {
-
-      
         lableBrightnes.Text = e.NewValue.ToString();
         myMessage.Lv = (ushort)e.NewValue;
       
@@ -800,7 +826,7 @@ public partial class MainPage : ContentPage
             myMessage.Command = PossibleCommands.SETPWM;
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
-            await Task.Run(async () => await SendCommandAsync(btn));
+            await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
     }
 
@@ -847,7 +873,7 @@ public partial class MainPage : ContentPage
             myMessage.Command = PossibleCommands.SETPWM;
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
-            await Task.Run(async () => await SendCommandAsync(btn));
+            await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
 
     }
@@ -863,7 +889,7 @@ public partial class MainPage : ContentPage
         myMessage.Command = PossibleCommands.SETPWM;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
-        await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
     }
 
@@ -907,6 +933,11 @@ public partial class MainPage : ContentPage
             lblCurrentBlue.Text = "Blue 50mA";
             myMessage.CurrentBlue = true;
         }
+    }
+
+    private void CancleCommand(object sender, EventArgs e)
+    {
+
     }
 }
 

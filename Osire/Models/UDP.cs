@@ -51,7 +51,7 @@ namespace Osire.Models
             
             await socket.ReceiveAsync(data, 0); //Wait for answer
             
-            Waiting = false; //New command can be send now
+            //Waiting = false; //New command can be send now
             Array.Resize(ref data, (data[1]+1)); //Cut data to size
             return data.Skip(1).ToArray(); //remove preamble 
         }

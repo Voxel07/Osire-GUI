@@ -30,10 +30,16 @@
                 HorizontalOptions="Center"
                 VerticalOptions="Center"
                 ToolTipProperties.Text="This will reset the application"/>
-        <Button Text="Demos"
+        <Button Text="Lauflicht"
                 Clicked="GoToDemosPage"
                 Grid.Row="0"
                 Grid.Column="0"
+                MaximumHeightRequest="50"
+                MaximumWidthRequest="150"/>
+        <Button Text="PingPong"
+                Clicked="DemoPingPong"
+                Grid.Row="0"
+                Grid.Column="1"
                 MaximumHeightRequest="50"
                 MaximumWidthRequest="150"/>
 
@@ -127,6 +133,8 @@
 
                 <Label x:Name="lblLightState" Text="dummy" HorizontalOptions="Start" VerticalOptions="Center"
                        Grid.Row="2" Grid.Column="1" TextColor="Red"/>
+                <Label x:Name="LblRawAnswer" Text="dummy" HorizontalOptions="Start" VerticalOptions="Center"
+                       Grid.Row="3" Grid.Column="1" TextColor="Red"/>
 
 
                 <ListView x:Name="countedLeds" HorizontalOptions="Start" MaximumWidthRequest="75" ItemSelected="svLedSelected"
@@ -683,6 +691,7 @@
             <Border MinimumHeightRequest="150" Margin="0,0,10,0">
                 <VerticalStackLayout>
                     <Label x:Name="runningCommands" Text="dummy" TextColor="Red"/>
+                    <Button Text="Kill Command" Clicked="CancleCommand" VerticalOptions="End" />
                 </VerticalStackLayout>
 
             </Border>

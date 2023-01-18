@@ -35,7 +35,7 @@ namespace Osire.Models
         }
         public enum PossibleDemos
 {
-            STATIC_COLOR, LED_STRIPE, DIMING
+            STATIC_COLOR, LED_STRIPE, DIMING, PINGPONG
         }
 
         public PossibleCommands Command { get; set; }
