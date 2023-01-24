@@ -31,15 +31,15 @@ public partial class MainPage : ContentPage
 
     private async void GoToDemosPage(object sender , EventArgs e)
     {
-        //Button btn = sender as Button;
+        Button btn = sender as Button;
 
-        //myMessage.Type = DEMO;
-        //myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
+        myMessage.Type = DEMO;
+        myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
 
-        ////await Task.Run(async () => await SendCommandAsync(btn));
-        //await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+        //await Task.Run(async () => await SendCommandAsync(btn));
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        Shell.Current.GoToAsync(nameof(Demos));
+        //Shell.Current.GoToAsync(nameof(Demos));
     }
 
     private async void DemoPingPong(object sender, EventArgs e)
@@ -145,13 +145,10 @@ public partial class MainPage : ContentPage
 
         if (BtnActivateLed.Text == "On")
         {
-            BtnActivateLed.Text = "Off";
             myMessage.Command = PossibleCommands.GOSLEEP;
-
         }
         else
         {
-            BtnActivateLed.Text = "On";
             myMessage.Command = PossibleCommands.GOACTIVE;
         }
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
@@ -362,7 +359,7 @@ public partial class MainPage : ContentPage
                     LblSetPwmF.Text = "586 Hz / 15 bit";
                     led.PWM_F = "586 Hz / 15 bit";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 8);
+                myMessage.Setup = SetBit(myMessage.Setup, 7, state);
                 break;
             case "ClkInv":
                 if (state)
@@ -375,7 +372,7 @@ public partial class MainPage : ContentPage
                     LblSetClkP.Text = "HIGH";
                     led.CLK_INV = "HIGH";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 7);
+                myMessage.Setup = SetBit(myMessage.Setup, 6, state);
                 break;
             case "CbSetCrcEn":
                 if (state)
@@ -388,7 +385,7 @@ public partial class MainPage : ContentPage
                     LblSetCrcEn.Text = "DISABLED";
                     led.CRC_EN = "DISABLED";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 6);
+                myMessage.Setup = SetBit(myMessage.Setup, 5, state);
                 break;
             case "CbSetTempClk":
                 if (state)
@@ -401,7 +398,7 @@ public partial class MainPage : ContentPage
                     LblSetTempClk.Text = "19.2 kHz";
                     led.TEMPCLK = "19.2 kHz";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 5);
+                myMessage.Setup = SetBit(myMessage.Setup, 4, state);
                 break;
             case "CbSetCe":
                 if (state)
@@ -414,7 +411,7 @@ public partial class MainPage : ContentPage
                     LblSetCe.Text = "RAISE";
                     led.CE_FSAVE = "RAISE";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 4);
+                myMessage.Setup = SetBit(myMessage.Setup, 3, state);
                 break;
             case "CbSetLos":
                 if (state)
@@ -427,7 +424,7 @@ public partial class MainPage : ContentPage
                     LblSetLos.Text = "RAISE";
                     led.LOS_FSAVE = "RAISE";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 3);
+                myMessage.Setup = SetBit(myMessage.Setup, 2, state);
                 break;
             case "CbSetOt":
                 if (state)
@@ -440,7 +437,7 @@ public partial class MainPage : ContentPage
                     LblSetOt.Text = "RAISE";
                     led.OT_FSAVE = "RAISE";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 2);
+                myMessage.Setup = SetBit(myMessage.Setup, 1, state);
                 break;
             case "CbSetUv":
                 if (state)
@@ -453,18 +450,27 @@ public partial class MainPage : ContentPage
                     LblSetUv.Text = "RAISE";
                     led.UV_FSAVE = "RAISE";
                 }
-                myMessage.Setup |= (byte)((state ? 1 : 0) << 1);
+                myMessage.Setup = SetBit(myMessage.Setup, 0 , state);
                 break;
             default:
                 break;
         }
 
-        Button dummy = new Button();
-        myMessage.Command = PossibleCommands.SETSETUP;
-        myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 8;
-        await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
+    
+        if (CbLiveUpdate.IsChecked)
+        {
+            Button dummy = new Button();
+            myMessage.Command = PossibleCommands.SETSETUP;
+            myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+            myMessage.PSI = 8;
+            await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
+        }
 
+    }
+
+    private byte SetBit (byte value, int postioin, bool bit)
+    {
+        return (byte)(bit ? (value | (1 << postioin)) : (value & ~ (1 << postioin)));
     }
 
     private async void SetOtthChanged(object sender, EventArgs e)
@@ -506,7 +512,7 @@ public partial class MainPage : ContentPage
             case "EnSetOtHigh":
                 if (val >= 0 && val < 143)
                 {
-                    if (myMessage.OTTH[1] < val)
+                    if (myMessage.OTTH[1] < val +113)
                     {
                         myMessage.OTTH[0] = (byte)(val + 113);
                         LblSetOtHigh.Text = val.ToString() + "°C";
@@ -525,11 +531,14 @@ public partial class MainPage : ContentPage
             default:
                 break;
         }
-        Button dummy = new Button();
-        myMessage.Command = PossibleCommands.SETOTTH;
-        myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 10;
-        await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
+        if(CbLiveUpdate.IsChecked)
+        { 
+            Button dummy = new Button();
+            myMessage.Command = PossibleCommands.SETOTTH;
+            myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+            myMessage.PSI = 10;
+            await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
+        }
     }
 
 
@@ -574,20 +583,33 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private Task _previousCommand;
+    private static bool _isTaskRunning = false;
+    private static object _look = new object();
 
-    public async Task ExecuteCommandAsync(Func<Task> command)
+    private async Task ExecuteCommandAsync(Func<Task> command)
     {
-
-        if (_previousCommand != null)
+        Button btn = new Button();
+        //Func<Task> command
+        lock (_look)
         {
-            Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
-            await _previousCommand;
-        }
-        _previousCommand = command();
-        await _previousCommand;
-        Dispatcher.Dispatch(() => lblLightState.Text = "");
+            if (_isTaskRunning)
+            {
+                Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
+                return;
+            }
 
+            _isTaskRunning = true;
+        }
+
+        try
+        {
+            await Task.Run(async () => await SendCommandAsync(btn));
+        }
+        finally
+        {
+            Dispatcher.Dispatch(() => lblLightState.Text = "");
+            _isTaskRunning = false;
+        }
     }
 
     private async Task<bool> SendCommandAsync(Button btn)
@@ -698,8 +720,10 @@ public partial class MainPage : ContentPage
             case PossibleCommands.INITLOOP:
                 break;
             case PossibleCommands.GOSLEEP:
+                Dispatcher.Dispatch(() => BtnActivateLed.Text = "Off");
                 break;
             case PossibleCommands.GOACTIVE:
+                Dispatcher.Dispatch(() => BtnActivateLed.Text = "On");
                 break;
             case PossibleCommands.GODEEPSLEEP:
                 break;

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Osire.Models
 {
-    internal class myColor
+    public class myColor
     {
         public ushort U { get; set; }
         public ushort V { get; set; }

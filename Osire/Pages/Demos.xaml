@@ -2,11 +2,103 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Osire.Pages.Demos"
+             xmlns:ViewModels="clr-namespace:Osire.ViewModels"
+             x:DataType="ViewModels:DemoViewModel"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              Title="Demos">
-    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center">
-        <Button Text="Lauflicht" Clicked="Lauflicht" />
+    
+    
+    
+    <!--Main Grid-->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
 
-        <Entry Placeholder="Number of " />
+        <!--Running Light-->
+        <Grid Grid.Row="0" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
 
-    </VerticalStackLayout>
+            <Border  Grid.Row="0" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Slider x:Name="SliderWidth" Grid.Row="0" Grid.Column="0"  VerticalOptions="Center"/>
+                        <Label x:Name="LblWidth" Margin="25,0,0,0" VerticalOptions="Center" Text="{Binding Source={x:Reference SliderWidth}, Path=Value, StringFormat='Width: {0:F0}'}"
+                               Grid.Row="0" Grid.Column="1" />
+                    <Slider x:Name="SliderOffset" Maximum="200" Minimum="0"  VerticalOptions="Center"
+                                Grid.Row="1" Grid.Column="0"/>
+                        <Label x:Name="LblOffset" Margin="25,0,0,0" Text="{Binding Source={x:Reference SliderOffset}, Path=Value, StringFormat='Offset {0:F0}'}"
+                               Grid.Row="1" Grid.Column="1" VerticalOptions="Center"/>
+                    
+                </Grid>
+            </Border>
+            <VerticalStackLayout Grid.Row="0" Grid.Column="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Button Text="ADD Bar" Clicked="AddBarToRunningLight" HorizontalOptions="Center" Grid.Row="0" Grid.Column="0"/>
+                    <Button Text="RM Bar" Clicked="RemoveBarFromRunningLight" HorizontalOptions="Center" Grid.Row="0" Grid.Column="1"/>
+                    
+                    <!--<ListView x:Name="BarList" ItemsSource="{Binding MyItems}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+                        <ListView.ItemTemplate>
+                            <DataTemplate >
+                                <ViewCell>
+                                    <StackLayout Orientation="Horizontal">
+                                        <Label Text="Bar #1" FontSize="Medium" VerticalOptions="Center"/>
+                                        <VerticalStackLayout HorizontalOptions="End">
+                                            <Label Text="{Binding Id}"/>
+                                            <Label Text="V: "/>
+                                            <Label Text="L: "/>
+                                        </VerticalStackLayout>
+                                    </StackLayout>
+                                </ViewCell>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView-->
+                </Grid>
+              
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Row="0" Grid.Column="2" Grid.RowSpan="2">
+                <Label Text="200 LEDs found" HorizontalOptions="Center"/>
+                <Image x:Name="img" Source="cie_luv_fixed.png" MaximumWidthRequest="250" MaximumHeightRequest="200">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTab" NumberOfTapsRequired="1"/>
+                    </Image.GestureRecognizers>
+                </Image>
+            </VerticalStackLayout>
+            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
+            </Border>
+        </Grid>
+        
+       
+    </Grid>
 </ContentPage>
