@@ -29,7 +29,7 @@ public partial class Demos : ContentPage
 
 
 
-    private async void OnTab(object sender, TappedEventArgs e)
+    private void OnTab(object sender, TappedEventArgs e)
     {
         double maxX = 65535;
         double maxY = 65535;

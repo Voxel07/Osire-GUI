@@ -204,9 +204,9 @@ namespace Osire.Models
                 case PossibleCommands.SETSETUP:
                     break;
                 case PossibleCommands.READPWM:
-                    this.PwmRed = BitConverter.ToUInt16(data, 5); //[5][6]
+                    this.PwmBlue = BitConverter.ToUInt16(data, 5); //[5][6]
                     this.PwmGreen = BitConverter.ToUInt16(data, 7); //[7][8] 
-                    this.PwmBlue = BitConverter.ToUInt16(data, 9); //[9][10]
+                    this.PwmRed = BitConverter.ToUInt16(data, 9); //[9][10]
                     break;
                 case PossibleCommands.SETPWM:
                     break;

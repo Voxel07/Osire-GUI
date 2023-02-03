@@ -154,9 +154,9 @@ namespace Osire.Models
 
         public void SetPWM(ref Message msg)
         {
-            PwmRed = msg.CurrentRed + "|" + (msg.PwmRed |= (ushort)((0) << 15));
-            PwmGreen = msg.CurrentGreen + "|" + (msg.PwmGreen |= (ushort)((0) << 15));
-            PwmBlue = msg.CurrentBlue + "|" + (msg.PwmBlue |= (ushort)((0) << 15));
+            PwmRed = msg.CurrentRed == true ? "50":"10" + "|" + (msg.PwmRed |= (ushort)((0) << 15));
+            PwmGreen = msg.CurrentGreen == true ? "50" : "10" + "|" + (msg.PwmGreen |= (ushort)((0) << 15));
+            PwmBlue = msg.CurrentBlue == true ? "50" : "10" + "|" + (msg.PwmBlue |= (ushort)((0) << 15));
             TimeStampPwm = DateTime.Now.ToString("HH:mm:ss");
         }
 
