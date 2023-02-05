@@ -189,7 +189,7 @@ namespace Osire.Models
                     this.LedStatus = data[5];
                     break;
                 case PossibleCommands.READTEMP:
-                    this.Temperature = data[5];
+                    this.Temperature = (byte)(data[5] & 0b00111111);
                     break;
                 case PossibleCommands.READOTTH:
                     this.OTTH[0] = data[5];

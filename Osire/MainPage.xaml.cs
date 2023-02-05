@@ -23,13 +23,13 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
     }
-     
-    private void Reset(object sender , EventArgs e)
+
+    private void Reset(object sender, EventArgs e)
     {
         Microsoft.Maui.Controls.Application.Current.MainPage = new MainPage();
     }
 
-    private async void GoToDemosPage(object sender , EventArgs e)
+    private async void GoToDemosPage(object sender, EventArgs e)
     {
         Button btn = sender as Button;
 
@@ -68,6 +68,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        //Reset
         myMessage.SetMessageToReset();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
@@ -76,38 +77,35 @@ public partial class MainPage : ContentPage
             lblLightState.Text = "Error while resetting";
             return;
         }
-        
+
         cbStateLightReset.IsChecked = true;
         Light.LedsWereReset = true;
 
         //Init
-        InitLED(sender, e);
-        if(myMessage.Error != 0)
+        if (!await InitLED(sender, e)) return;
+        if (myMessage.Error != 0)
         {
             lblLightState.Text = "Error during init";
             return;
         }
 
-        if(myMessage.Address != entry_LedCount.Text)
-        {
-            lblLightState.Text = "LED cnt missmatch Detected:" + myMessage.Address + "| Expected: " + entry_LedCount.Text;
-            return;
-        }
-  
-        SetConfig(sender, e);
+        //Config
+        if (!await SetConfig(sender, e)) return;
         if (myMessage.Error != 0)
         {
             lblLightState.Text = "Error during setup";
             return;
         }
+
+        myMessage.Address = 0;
     }
 
-    private async void InitLED(object sender, EventArgs e)
+    private async Task<bool> InitLED(object sender, EventArgs e)
     {
         if (!Light.IpSet || !Light.LedCountSet)
         {
             lblLightState.Text = "Light config missing";
-            return;
+            return false;
         }
 
         Button btn = sender as Button;
@@ -115,34 +113,40 @@ public partial class MainPage : ContentPage
         myMessage.SetMessageToInit();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        if (myMessage.Error == 0)
+        if (myMessage.Error != 0) return false;
+
+        if (myMessage.LedCount != Light.LedCount)
         {
-            Light.LedsWereInitialized = true;
-            Light.SetLeds(myMessage.LedCount);
-            Light.InitLeds();
-            countedLeds.ItemsSource = Light.LEDs;
-            cbStateLightInit.IsChecked = true;
-            //BtnSetConfig.IsEnabled = true;
-            //Activate the led selection
-            countedLeds.IsVisible = true;
-            ledAddr.IsVisible = true;
-            lblledAddr.IsVisible = true;
-
-            if (!UpdateUi())
-            {
-                LblLedState.Text = "Updating the UI failed";
-            }
-
+            lblLightState.Text = "LED cnt missmatch Detected:" + myMessage.Address + "| Expected: " + EntryLedCount.Text;
+            return false;
         }
-      
+
+        Light.LedsWereInitialized = true;
+        Light.LedCount = myMessage.LedCount;
+        Light.SetLeds(myMessage.LedCount);
+        Light.InitLeds();
+        countedLeds.ItemsSource = Light.LEDs;
+        cbStateLightInit.IsChecked = true;
+        countedLeds.IsVisible = true;
+        EntryLedAddr.IsVisible = true;
+        lblledAddr.IsVisible = true;
+
+        if (!UpdateUi())
+        {
+            LblLedState.Text = "Updating the UI failed";
+        }
+
+
+        return true;
+
     }
 
-    private async void SetConfig(object sender, EventArgs e)
+    private async Task<bool> SetConfig(object sender, EventArgs e)
     {
         if (!Light.IpSet || !Light.LedCountSet)
         {
             lblLightState.Text = "Light config missing";
-            return;
+            return false;
         }
 
         Button btn = sender as Button;
@@ -154,21 +158,22 @@ public partial class MainPage : ContentPage
         if (myMessage.Error == 0)
         {
             cbStateLightSetup.IsChecked = true;
-            BtnActivateLed.IsEnabled = true;
+            BtnActivateLight.IsEnabled = true;
             Light.LedsWereReset = true;
-            CbAutoRefresh.IsEnabled = true;
+            //CbAutoRefresh.IsEnabled = true;
 
         }
+        return true;
     }
 
-    private async void ActivateLed(object sender, EventArgs e)
+    private async void ActivateLight(object sender, EventArgs e)
     {
         Button btn = sender as Button;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 7;
         myMessage.Address = 0;
 
-        if (BtnActivateLed.Text == "On")
+        if (Light.LedsAreActive)
         {
             myMessage.Command = PossibleCommands.GOSLEEP;
         }
@@ -177,16 +182,33 @@ public partial class MainPage : ContentPage
             myMessage.Command = PossibleCommands.GOACTIVE;
         }
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+
+        if (myMessage.Error == 0)
+        {
+            cbStateLedsActiv.IsChecked = !cbStateLedsActiv.IsChecked;
+            Light.LedsAreActive = !Light.LedsAreActive;
+            BtnPingPong.IsEnabled = true;
+            ToolTipProperties.SetText(BtnPingPong, "Start the running light demo");
+            BtnLauflicht.IsEnabled = true;
+            ToolTipProperties.SetText(BtnLauflicht, "Start the ping pong demo");
+
+        }
     }
 
     private async void ToggleLed(object sender, EventArgs e)
     {
         Button btn = sender as Button;
+
+        if (Light.LedsWereInitialized == false)
+        {
+            LblLedState.Text = "init not complete";
+            return;
+        }
         LED led = Light.LEDs[Light.SelectedLed - 1];
-        
+
         myMessage.PSI = 7;
-        
-        if(led.State == "ACTIVE")
+
+        if (led.State == "ACTIVE")
         {
             myMessage.Command = PossibleCommands.GOSLEEP;
             BtnToggleLed.Text = "Off";
@@ -237,14 +259,8 @@ public partial class MainPage : ContentPage
 
     private void HandleLedCountChange(object sender, EventArgs e)
     {
-        string ledCountText = entry_LedCount.Text;
+        string ledCountText = EntryLedCount.Text;
         int pos = ledCountText.Length;
-
-        if(!Light.LedsWereReset)
-        {
-            LblLedState.Text = "LED's have to be initalized first";
-            return;
-        }
 
         if (pos > 0)
         {
@@ -259,6 +275,7 @@ public partial class MainPage : ContentPage
         {
             lblLedCount.Text = "Must be a Number 0 > X > 1024";
             cbStateLightCount.IsChecked = false;
+            return;
         }
 
         if (ledCount > 0 && ledCount < 1024)
@@ -280,34 +297,43 @@ public partial class MainPage : ContentPage
     }
 
     //Handle Selected LED
-    private void EntryLedAddr(object sender, EventArgs e)
+    private void HandleLedSelection(object sender, EventArgs e)
     {
-        string addresse = ledAddr.Text;
+        string addresse = EntryLedAddr.Text;
         if (!int.TryParse(addresse, out int pos))
         {
             return;
         }
+
         if (pos > Light.LedCount)
         {
             pos = Light.LedCount;
         }
-        //BtnInitLED.IsEnabled = true;
-        //if(pos > 0) { pos -= 1; } 
-        countedLeds.ScrollTo(Light.LEDs.ElementAt(pos), ScrollToPosition.Start, true);
+
+        if (pos > 0)
+        {
+            countedLeds.ScrollTo(Light.LEDs.ElementAt(pos - 1), ScrollToPosition.Start, true);
+            //countedLeds.SelectedItem
+            EntryLedAddr.Text = pos.ToString();
+            countedLeds.SelectedItem = Light.LEDs.ElementAt(pos - 1) ;
+        }
         lblSelectedLed.Text = pos.ToString();
-        ledAddr.Text = pos.ToString();
         myMessage.Address = (ushort)pos;
         Light.SelectedLed = (ushort)pos;
-
+        UpdateUiWhenSelectedLedChanged();
     }
 
     //Handle LED selection from ListView
     void svLedSelected(object sender, SelectedItemChangedEventArgs e)
     {
         LED led = e.SelectedItem as LED;
+        int pos = e.SelectedItemIndex;
+        countedLeds.SelectedItem = led;
         lblSelectedLed.Text = led.Address.ToString();
         myMessage.Address = led.Address;
         Light.SelectedLed = led.Address;
+        EntryLedAddr.Text = led.Address.ToString();
+        UpdateUiWhenSelectedLedChanged();
     }
 
     async void Refresh(object sender, EventArgs e)
@@ -341,22 +367,46 @@ public partial class MainPage : ContentPage
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
     }
-    private async void SetCommand(object sender , EventArgs e)
+
+    private void CbBroadcastChanged (object sender, CheckedChangedEventArgs e)
     {
-        if(!Light.LedCountSet || !Light.IpSet)
+        if(e.Value)
+        {
+            EntryLedAddr.Text = "0";
+        }
+    }
+    private void CheckBroadcast()
+    {
+        if (cbBroadcast.IsChecked)
+        {
+            myMessage.Address = 0;
+        }
+        else
+        {
+            myMessage.Address = Light.SelectedLed;
+        }
+    }
+
+    private async void SetCommand(object sender, EventArgs e)
+    {
+        if (!Light.LedCountSet || !Light.IpSet)
         {
             LblLedState.Text = "Init not complete";
             return;
         }
         Button btn = sender as Button;
-        myMessage.PSI = 8;
+        //myMessage.PSI = 8;
+
+        CheckBroadcast();
 
         switch (btn.ClassId)
         {
             case "BtnSetSetup":
                 myMessage.Command = PossibleCommands.SETSETUP;
+                myMessage.PSI = 8;
                 break;
             case "BtnSetOtth":
+                myMessage.PSI = 10;
                 myMessage.Command = PossibleCommands.SETOTTH;
                 break;
             default:
@@ -481,13 +531,13 @@ public partial class MainPage : ContentPage
                     LblSetUv.Text = "RAISE";
                     led.UV_FSAVE = "RAISE";
                 }
-                myMessage.Setup = SetBit(myMessage.Setup, 0 , state);
+                myMessage.Setup = SetBit(myMessage.Setup, 0, state);
                 break;
             default:
                 break;
         }
 
-    
+
         if (CbLiveUpdate.IsChecked)
         {
             Button dummy = new Button();
@@ -499,16 +549,16 @@ public partial class MainPage : ContentPage
 
     }
 
-    private byte SetBit (byte value, int postioin, bool bit)
+    private byte SetBit(byte value, int postioin, bool bit)
     {
-        return (byte)(bit ? (value | (1 << postioin)) : (value & ~ (1 << postioin)));
+        return (byte)(bit ? (value | (1 << postioin)) : (value & ~(1 << postioin)));
     }
 
     private async void SetOtthChanged(object sender, EventArgs e)
     {
         Entry entry = sender as Entry;
-        
-        if(!Byte.TryParse(entry.Text, out byte val))
+
+        if (!Byte.TryParse(entry.Text, out byte val))
         {
             LblLedState.Text = "Has to be a Number";
             return;
@@ -517,7 +567,7 @@ public partial class MainPage : ContentPage
         switch (entry.ClassId)
         {
             case "EnSetOrCycle":
-                if(val >= 1 && val < 5)
+                if (val >= 1 && val < 5)
                 {
                     myMessage.OTTH[2] = ((byte)(val - 1));
                     EntryOrCycle.Text = val.ToString();
@@ -529,11 +579,18 @@ public partial class MainPage : ContentPage
                 }
                 break;
             case "EnSetOtLow":
-                if(val >= 0 && val < 143)
+                if (val >= 0 && val < 143)
                 {
-                    myMessage.OTTH[1] = (byte)(val + 113);
-                    EntryOtLow.Text = val.ToString();
-                    LblLedState.Text = "";
+                    if (myMessage.OTTH[0] > val + 113)
+                    {
+                        myMessage.OTTH[1] = (byte)(val + 113);
+                        EntryOtLow.Text = val.ToString();
+                        LblLedState.Text = "";
+                    }
+                    else
+                    {
+                        LblLedState.Text = "Temp Config error low >= high";
+                    }
                 }
                 else
                 {
@@ -543,7 +600,7 @@ public partial class MainPage : ContentPage
             case "EnSetOtHigh":
                 if (val >= 0 && val < 143)
                 {
-                    if (myMessage.OTTH[1] < val +113)
+                    if (myMessage.OTTH[1] < val + 113)
                     {
                         myMessage.OTTH[0] = (byte)(val + 113);
                         EntryOtHigh.Text = val.ToString();
@@ -562,8 +619,8 @@ public partial class MainPage : ContentPage
             default:
                 break;
         }
-        if(CbLiveUpdate.IsChecked)
-        { 
+        if (CbLiveUpdate.IsChecked)
+        {
             Button dummy = new Button();
             myMessage.Command = PossibleCommands.SETOTTH;
             myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
@@ -575,7 +632,7 @@ public partial class MainPage : ContentPage
 
     private CancellationTokenSource _cts;
 
-    async void cbRefreshCheckedChanged (object sender, CheckedChangedEventArgs e)
+    async void cbRefreshCheckedChanged(object sender, CheckedChangedEventArgs e)
     {
         //Use READTEMPST instead of READTEMP and READST
         if (e.Value == true)
@@ -610,7 +667,7 @@ public partial class MainPage : ContentPage
             await SendCommandAsync(dummy);
 
             await Task.Delay(1000, cancellationToken);
-            
+
         }
     }
 
@@ -638,27 +695,20 @@ public partial class MainPage : ContentPage
         }
         finally
         {
-            Dispatcher.Dispatch(() => lblLightState.Text = "");
+            //Dispatcher.Dispatch(() => lblLightState.Text = "");
             _isTaskRunning = false;
         }
     }
 
     private async Task<bool> SendCommandAsync(Button btn)
     {
-        //Check if a command is still running
-        //if (Light.connection2.Waiting)
-        //{
-        //    Dispatcher.Dispatch(() => lblLightState.Text = "There is already a command running");
-        //    return false;
-        //}
         Dispatcher.Dispatch(() => btn.IsEnabled = false); //Disable the button
 
-        //Light.connection.Waiting = true; //Block till command is complete
         Dispatcher.Dispatch(() => runningCommands.Text = myMessage.getCommand()); //Update Ui 
-       
+
         Light.connection.SendMessage(myMessage.Serialize()); //MSG -> Byte[] //Send message
 
-        if(myMessage.Type != MessageTypes.COMMAND_WITH_RESPONSE)
+        if (myMessage.Type != MessageTypes.COMMAND_WITH_RESPONSE)
         {
             Light.connection2.Waiting = false;
             Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button
@@ -667,7 +717,7 @@ public partial class MainPage : ContentPage
 
         // Handle Answer
         byte[] tmp = await Task.Run(() => Light.connection.ReceiveMessage()); //Start receive
-       
+
         Light.connection2.Waiting = false; //Next command can be send now
 
         if (tmp.Length == 0) //return if PSI != bytes received
@@ -703,17 +753,17 @@ public partial class MainPage : ContentPage
         }
         else
         {
-            Dispatcher.Dispatch(() => LblLedState.Text =""); //clear old error text
+            Dispatcher.Dispatch(() => LblLedState.Text = ""); //clear old error text
         }
 
-        if(Light.LedsWereInitialized) //Cant update the ui before init is complete
+        if (Light.LedsWereInitialized) //Cant update the ui before init is complete
         {
             if (!UpdateUi())
             {
                 Dispatcher.Dispatch(() => LblLedState.Text = "Updating the UI failed");
             }
         }
-        
+
 
         Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button after answer is received
         //Light.connection2.Waiting = false; //Next command can be send now
@@ -722,7 +772,7 @@ public partial class MainPage : ContentPage
     }
 
     private bool UpdateUi()
-    {   
+    {
         ushort addr = Light.SelectedLed;
         if (addr > 0) { addr -= 1; } // Handle offset from addr 1... zu array 0...
         LED led = Light.LEDs.ElementAt(addr);
@@ -751,10 +801,10 @@ public partial class MainPage : ContentPage
             case PossibleCommands.INITLOOP:
                 break;
             case PossibleCommands.GOSLEEP:
-                Dispatcher.Dispatch(() => BtnActivateLed.Text = "Off");
+                Dispatcher.Dispatch(() => BtnActivateLight.Text = "On");
                 break;
             case PossibleCommands.GOACTIVE:
-                Dispatcher.Dispatch(() => BtnActivateLed.Text = "On");
+                Dispatcher.Dispatch(() => BtnActivateLight.Text = "Off");
                 break;
             case PossibleCommands.GODEEPSLEEP:
                 break;
@@ -775,7 +825,7 @@ public partial class MainPage : ContentPage
                 led.SetTempSt(ref myMessage);
                 Dispatcher.Dispatch(() => EntryCurrentTemp.Text = led.Temperature.ToString());
                 Dispatcher.Dispatch(() => LblState.Text = led.State);
-                Dispatcher.Dispatch(() => LblOtpCrc.Text = led.OtpCRC);   
+                Dispatcher.Dispatch(() => LblOtpCrc.Text = led.OtpCRC);
                 Dispatcher.Dispatch(() => LblCom.Text = led.Com);
                 Dispatcher.Dispatch(() => LblStatusCe.Text = led.Error_ce);
                 Dispatcher.Dispatch(() => LblStatusLos.Text = led.Error_los);
@@ -823,13 +873,13 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblSetTempClk.Text = led.TEMPCLK);
                 Dispatcher.Dispatch(() => CbSetTempClk.IsChecked = led.TEMPCLK == "2.4 kHz");
                 Dispatcher.Dispatch(() => LblSetCe.Text = led.CE_FSAVE);
-                Dispatcher.Dispatch(() => CbSetClkP.IsChecked = led.CE_FSAVE == "RAISE & SLEEP");
+                Dispatcher.Dispatch(() => CbSetCe.IsChecked = led.CE_FSAVE == "RAISE & SLEEP");
                 Dispatcher.Dispatch(() => LblSetLos.Text = led.LOS_FSAVE);
-                Dispatcher.Dispatch(() => CbSetClkP.IsChecked = led.LOS_FSAVE == "RAISE & SLEEP");
+                Dispatcher.Dispatch(() => CbSetLos.IsChecked = led.LOS_FSAVE == "RAISE & SLEEP");
                 Dispatcher.Dispatch(() => LblSetOt.Text = led.OT_FSAVE);
-                Dispatcher.Dispatch(() => CbSetClkP.IsChecked = led.OT_FSAVE == "RAISE & SLEEP");
+                Dispatcher.Dispatch(() => CbSetOt.IsChecked = led.OT_FSAVE == "RAISE & SLEEP");
                 Dispatcher.Dispatch(() => LblSetUv.Text = led.UV_FSAVE);
-                Dispatcher.Dispatch(() => CbSetClkP.IsChecked = led.UV_FSAVE == "RAISE & SLEEP");
+                Dispatcher.Dispatch(() => CbSetUv.IsChecked = led.UV_FSAVE == "RAISE & SLEEP");
 
                 break;
             case PossibleCommands.SETSETUP:
@@ -878,7 +928,7 @@ public partial class MainPage : ContentPage
     {
         lableBrightnes.Text = e.NewValue.ToString();
         myMessage.Lv = (ushort)e.NewValue;
-      
+
 
         if (CbLiveUpdate.IsChecked)
         {
@@ -890,6 +940,7 @@ public partial class MainPage : ContentPage
             myMessage.Command = PossibleCommands.SETPWM;
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
+            CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
     }
@@ -917,15 +968,6 @@ public partial class MainPage : ContentPage
         myMessage.U = u;
         myMessage.V = v;
 
-        //Point? point = e.GetPosition((View)sender);
-        //Ellipse ellipse = new Ellipse
-        //{
-        //    WidthRequest = 10,
-        //    HeightRequest = 10,
-        //    AnchorX = e.GetPosition.((View)sender),
-        //    AnchorY = p.Value.Y
-        //};
-
         if (CbLiveUpdate.IsChecked)
         {
             if (!Light.LedCountSet || !Light.IpSet || !Light.LedsWereReset || !Light.LedsWereInitialized)
@@ -937,6 +979,7 @@ public partial class MainPage : ContentPage
             myMessage.Command = PossibleCommands.SETPWM;
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
+            CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
 
@@ -949,17 +992,18 @@ public partial class MainPage : ContentPage
             lblLightState.Text = "Init not complete";
             return;
         }
+
         Button btn = sender as Button;
         myMessage.Command = PossibleCommands.SETPWM;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
+        CheckBroadcast();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
-
     }
 
     private void cbCurrentRedChanged(object sender, CheckedChangedEventArgs e)
     {
-        if(e.Value)
+        if (e.Value)
         {
             lblCurrentRed.Text = "Red 10mA";
             myMessage.CurrentRed = false;
@@ -999,11 +1043,102 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void CancleCommand(object sender, EventArgs e)
+    private void UpdateUiWhenSelectedLedChanged()
     {
+        ushort addr = Light.SelectedLed;
+        if (addr > 0) // Handle offset from addr 1... zu array 0...
+        {
+            addr -= 1; 
+        } 
+        else
+        {
+            return; //Nothing to update
+        }
+        LED led = Light.LEDs.ElementAt(addr);
+        led = Light.LEDs.ElementAt(Light.SelectedLed - 1);
 
+        EntryCurrentTemp.Text = led.Temperature.ToString();
+        LblState.Text = led.State;
+        LblOtpCrc.Text = led.OtpCRC;
+        LblCom.Text = led.Com;
+        LblStatusCe.Text = led.Error_ce;
+        LblStatusLos.Text = led.Error_los;
+        LblStatusOt.Text = led.Error_ot;
+        LblStatusUv.Text = led.Error_ce;
+        LblRefreshStatus.Text = led.TimestampStatus;
+        LblRefreshOtth.Text = led.TimestampOtth;
+        lblSelectedLed.Text = Light.SelectedLed.ToString();
+        BtnActivateLight.Text = "On";
+        BtnActivateLight.Text = "Off";
+        LblState.Text = led.State;
+        LblOtpCrc.Text = led.OtpCRC;
+        LblCom.Text = led.Com;
+        LblStatusCe.Text = led.Error_ce;
+        LblStatusLos.Text = led.Error_los;
+        LblStatusOt.Text = led.Error_ot;
+        LblStatusUv.Text = led.Error_ce;
+        EntryCurrentTemp.Text = led.Temperature.ToString();
+        LblState.Text = led.State;
+        LblOtpCrc.Text = led.OtpCRC;
+        LblCom.Text = led.Com;
+        LblStatusCe.Text = led.Error_ce;
+        LblStatusLos.Text = led.Error_los;
+        LblStatusOt.Text = led.Error_ot;
+        LblStatusUv.Text = led.Error_ce;
+        LblRefreshStatus.Text = led.TimestampStatus;
+        LblRefreshOtth.Text = led.TimeStampTemp;
+        LblSio1.Text = led.Cs_SIO1;
+        LblSio2.Text = led.Cs_SIO2;
+        LblRo.Text = led.RO;
+        LblGo.Text = led.GO;
+        LblBo.Text = led.BO;
+        LblRs.Text = led.RS;
+        LblGs.Text = led.BS;
+        LblBs.Text = led.GS;
+        EntryCurrentTemp.Text = led.Temperature.ToString();
+        EntryOrCycle.Text = led.OrCycle.ToString();
+        EntryOtLow.Text = led.OtLowValue.ToString();
+        EntryOtHigh.Text = led.OtHighValue.ToString();
+        LblSetPwmF.Text = led.PWM_F;
+        CbSetPwmF.IsChecked = led.PWM_F == "1172 Hz / 14 bit";
+        LblSetClkP.Text = led.CLK_INV;
+        CbSetClkP.IsChecked = led.CLK_INV == "LOW";
+        LblSetCrcEn.Text = led.CRC_EN;
+        CbSetCrcEn.IsChecked = led.CRC_EN == "Enabled";
+        LblSetTempClk.Text = led.TEMPCLK;
+        CbSetTempClk.IsChecked = led.TEMPCLK == "2.4 kHz";
+        LblSetCe.Text = led.CE_FSAVE;
+        CbSetClkP.IsChecked = led.CE_FSAVE == "RAISE & SLEEP";
+        LblSetLos.Text = led.LOS_FSAVE;
+        CbSetClkP.IsChecked = led.LOS_FSAVE == "RAISE & SLEEP";
+        LblSetOt.Text = led.OT_FSAVE;
+        CbSetClkP.IsChecked = led.OT_FSAVE == "RAISE & SLEEP";
+        LblSetUv.Text = led.UV_FSAVE;
+        CbSetClkP.IsChecked = led.UV_FSAVE == "RAISE & SLEEP";
+        lblPwmRed.Text = led.PwmRed;
+        lblPwmGreen.Text = led.PwmGreen;
+        lblPwmBlue.Text = led.PwmBlue;
+        LblRedDayU.Text = led.RedDayU.ToString();
+        LblRedDayV.Text = led.RedDayV.ToString();
+        LblRedDayLv.Text = led.RedDayLv.ToString();
+        LblRedNightU.Text = led.RedNightU.ToString();
+        LblRedNightV.Text = led.RedNightV.ToString();
+        LblRedNightLv.Text = led.RedNightLv.ToString();
+        LblGreenDayU.Text = led.GreenDayU.ToString();
+        LblGreenDayV.Text = led.GreenDayV.ToString();
+        LblGreenDayLv.Text = led.GreenDayLv.ToString();
+        LblGreenNightU.Text = led.GreenNightU.ToString();
+        LblGreenNightV.Text = led.GreenNightV.ToString();
+        LblGreenNightLv.Text = led.GreenNightLv.ToString();
+        LblBlueDayU.Text = led.BlueDayU.ToString();
+        LblBlueDayV.Text = led.BlueDayV.ToString();
+        LblBlueDayLv.Text = led.BlueDayLv.ToString();
+        LblBlueNightU.Text = led.BlueNightU.ToString();
+        LblBlueNightV.Text = led.BlueNightV.ToString();
+        LblBlueNightLv.Text = led.BlueNightLv.ToString();
+        LblChipId.Text = led.ChipId.ToString();
+        LblWaverId.Text = led.WaverId.ToString();
     }
 }
-
 
 

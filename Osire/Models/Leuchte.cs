@@ -19,7 +19,7 @@ namespace Osire.Models
         public bool LedCountSet { get; set; }
         public bool LedsWereReset { get; set; }
         public bool LedsWereInitialized { get; set; }
-
+        public bool LedsAreActive { get; set; }
         public Leuchte() 
         {
             IpSet = false;

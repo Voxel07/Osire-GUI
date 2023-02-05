@@ -154,9 +154,9 @@ namespace Osire.Models
 
         public void SetPWM(ref Message msg)
         {
-            PwmRed = msg.CurrentRed == true ? "50":"10" + "|" + (msg.PwmRed |= (ushort)((0) << 15));
-            PwmGreen = msg.CurrentGreen == true ? "50" : "10" + "|" + (msg.PwmGreen |= (ushort)((0) << 15));
-            PwmBlue = msg.CurrentBlue == true ? "50" : "10" + "|" + (msg.PwmBlue |= (ushort)((0) << 15));
+            PwmRed = (msg.CurrentRed == true ? "50":"10") + "|" + (msg.PwmRed |= (ushort)((0) << 15));
+            PwmGreen = (msg.CurrentGreen == true ? "50" : "10") + "|" + (msg.PwmGreen |= (ushort)((0) << 15));
+            PwmBlue = (msg.CurrentBlue == true ? "50" : "10") + "|" + (msg.PwmBlue |= (ushort)((0) << 15));
             TimeStampPwm = DateTime.Now.ToString("HH:mm:ss");
         }
 
@@ -231,8 +231,7 @@ namespace Osire.Models
         public void SetTemp(ref Message msg)
         {
             Temperature = (byte)(msg.Temperature - 113);
-            TimeStampTemp = DateTime.Now.ToString("HH:mm:ss");
-
+            TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 
         public void SetOtth(ref Message msg)
@@ -247,7 +246,7 @@ namespace Osire.Models
                 3 => "4 CYCLE",
                 _ => "default",
             };
-            TimeStampTemp = DateTime.Now.ToString("HH:mm:ss");
+            TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 
         public void SetSetup(ref Message msg)
