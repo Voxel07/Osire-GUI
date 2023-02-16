@@ -174,26 +174,95 @@
         <!--Farben-->
         <Grid Grid.Row="1" Grid.Column="4" Grid.ColumnSpan="3">
             <Grid.RowDefinitions>
-                <RowDefinition Height="50"/>
-                <RowDefinition Height="50"/>
+                <RowDefinition Height="30"/> <!--L-->
+                <RowDefinition Height="30"/> <!--R-->
+                <RowDefinition Height="30"/> <!--G-->
+                <RowDefinition Height="30"/> <!--B-->
+                <RowDefinition Height="35"/> <!--Current-->
                 <RowDefinition/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <!--Slider-->
-                <ColumnDefinition Width="60"/>
-                <!--Lable-->
-                <ColumnDefinition Width="250"/>
-                <!--Color Box-->
+                <ColumnDefinition /><!--Slider-->
+                <ColumnDefinition Width="20"/><!--Bottons-->
+                <ColumnDefinition Width="60"/><!--Lable-->
+                <ColumnDefinition Width="250"/><!--Color Box-->
             </Grid.ColumnDefinitions>
 
 
-            <Slider ClassId="sliderBrightnes" x:Name="sliderBrightnes" Maximum="1000" MinimumTrackColor="Grey" MaximumTrackColor="White" ValueChanged="OnSliderChanged" 
-                    Grid.Row="0" Grid.Column="0" ToolTipProperties.Text="Brightnes selector. Set's the l value"/>
-            <Label Padding="10,5,0,0" x:Name="lableBrightnes" Text="0" Grid.Row="0" Grid.Column="1"/>
+            <Slider ClassId="sliderBrightnes" x:Name="sliderBrightnes" Maximum="1000" MinimumTrackColor="Yellow" ValueChanged="OnSliderChanged" 
+                    Grid.Row="0" Grid.Column="0" ToolTipProperties.Text="Brightnes selector. Sets the l value" VerticalOptions="Center"/>
+            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Padding="5,0,0,0" VerticalOptions="Center" >
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,5,0,0"/>
+                    </Border.StrokeShape>
+                    <Button ClassId="BtnIncBrightnes" Clicked="ButtonIncrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="0,0,5,5"/>
+                    </Border.StrokeShape>
+                    <Button ClassId="BtnDecBrightnes" Clicked="ButtonDecrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+            </VerticalStackLayout>
+            <Label Padding="10,5,0,0" x:Name="lableBrightnes" Text="0" Grid.Row="0" Grid.Column="2"/>
+
+            <Slider ClassId="sliderPwmRed" x:Name="sliderPwmRed" Maximum="32767" MinimumTrackColor="Red" ValueChanged="OnSliderChanged" 
+                    Grid.Row="1" Grid.Column="0" ToolTipProperties.Text="Sets the Red PWM Value"/>
+            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Padding="5,0,0,0">
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10,10,0,0"/>
+                    </Border.StrokeShape>
+                    <Button ClassId="BtnIncRed" Clicked="ButtonIncrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="0,0,10,10"/>
+                    </Border.StrokeShape>
+                    <Button class="Set" ClassId="BtnDecRed" Clicked="SetCommand" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+            </VerticalStackLayout>
+            <Label Padding="10,5,0,0" x:Name="lablePwmRed" Text="0" Grid.Row="1" Grid.Column="2"/>
+
+            <Slider ClassId="sliderPwmGreen" x:Name="sliderPwmGreen" Maximum="32767" MinimumTrackColor="Green" ValueChanged="OnSliderChanged" 
+                    Grid.Row="2" Grid.Column="0" ToolTipProperties.Text="Sets the Green PWM Value"/>
+            <VerticalStackLayout Grid.Row="2" Grid.Column="1" Padding="5,0,0,0">
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10,10,0,0"/>
+                    </Border.StrokeShape>
+                    <Button ClassId="BtnIncGreen" Clicked="ButtonIncrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="0,0,10,10"/>
+                    </Border.StrokeShape>
+                    <Button class="Set" ClassId="BtnDecGreen" Clicked="ButtonDecrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+            </VerticalStackLayout>
+            <Label Padding="10,5,0,0" x:Name="lablePwmGreen" Text="0" Grid.Row="2" Grid.Column="2"/>
+
+            <Slider ClassId="sliderPwmBlue" x:Name="sliderPwmBlue" Maximum="32767" MinimumTrackColor="Blue" ValueChanged="OnSliderChanged" 
+                    Grid.Row="3" Grid.Column="0" ToolTipProperties.Text="Sets the Blue PWM Value"/>
+            <VerticalStackLayout Grid.Row="3" Grid.Column="1" Padding="5,0,0,0">
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10,10,0,0"/>
+                    </Border.StrokeShape>
+                    <Button ClassId="BtnIncBlue" Clicked="ButtonIncrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+                <Border StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="0,0,10,10"/>
+                    </Border.StrokeShape>
+                    <Button class="Set" ClassId="BtnDecBlue" Clicked="ButtonDecrement" CornerRadius="0" MaximumHeightRequest="12"/>
+                </Border>
+            </VerticalStackLayout>
+            <Label Padding="10,5,0,0" x:Name="lablePwmBlue" Text="0" Grid.Row="3" Grid.Column="2"/>
 
             <!--Current Limit-->
-            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="1" ToolTipProperties.Text="Max current for each Color">
+            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="1" ToolTipProperties.Text="Max current for each Color">
                 <Grid >
                     <Grid.RowDefinitions>
                         <RowDefinition/>
@@ -207,37 +276,42 @@
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
 
-                    <CheckBox x:Name="cbCurrentRed" Color="RED" Grid.Row="0" Grid.Column="0" CheckedChanged="cbCurrentRedChanged" />
+                    <CheckBox ClassId="cbCurrentRed" x:Name="cbCurrentRed" Color="RED" Grid.Row="0" Grid.Column="0" CheckedChanged="CheckboxChanged" />
                     <Label x:Name="lblCurrentRed" Text="Red 50mA" VerticalOptions="Center" 
                        Grid.Row="0" Grid.Column="1" />
-                    <CheckBox x:Name="cbCurrentGreen" Color="Green" Grid.Row="0" Grid.Column="2" CheckedChanged="cbCurrentGreenChanged" />
+                    <CheckBox ClassId="cbCurrentGreen" x:Name="cbCurrentGreen" Color="Green" Grid.Row="0" Grid.Column="2" CheckedChanged="CheckboxChanged" />
                     <Label x:Name="lblCurrentGreen" Text="Green 50mA" VerticalOptions="Center" 
                        Grid.Row="0" Grid.Column="3" />
-                    <CheckBox x:Name="cbCurrentBlue" Color="Blue" Grid.Row="0" Grid.Column="4" CheckedChanged="cbCurrentBlueChanged" />
+                    <CheckBox ClassId="cbCurrentBlue" x:Name="cbCurrentBlue" Color="Blue" Grid.Row="0" Grid.Column="4" CheckedChanged="CheckboxChanged" />
                     <Label x:Name="lblCurrentBlue" Text="Blue 50mA" VerticalOptions="Center"
                        Grid.Row="0" Grid.Column="5" />
                 </Grid>
             </Border>
 
             <!--UV Preview-->
-            <HorizontalStackLayout Grid.Row="2" Grid.Column="0">
+            <HorizontalStackLayout Grid.Row="5" Grid.Column="0">
                 <Button Text="SetColor" Clicked="UpdateColor" MaximumHeightRequest="50" VerticalOptions="Center" ToolTipProperties.Text="Set the LED color"/>
                 <CheckBox x:Name="CbLiveUpdate" Color="Green" Margin="35,0,0,0" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
                 <Label Text="Live Update" VerticalOptions="Center" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
-                <StackLayout Grid.Row="3"  Grid.Column="3" Grid.ColumnSpan="2" VerticalOptions="Center"  Margin="35,0,0,0" ToolTipProperties.Text="Raw U and V Data">
-                    <Label x:Name="LblX" Text="x"/>
-                    <Label x:Name="LblY" Text="y"/>
+                <StackLayout Grid.Row="3" Orientation="Horizontal" Spacing="5" Grid.Column="3" Grid.ColumnSpan="2" VerticalOptions="Center"  Margin="35,0,0,0" ToolTipProperties.Text="Raw U and V Data">
+                    <Label Text="U'" VerticalOptions="Center"/>
+                    <Entry ClassId="EntryU" x:Name="EntryU" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
+                    <Label Text="V'" VerticalOptions="Center"/>
+                    <Entry ClassId="EntryV" x:Name="EntryV" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
                 </StackLayout>
+                <HorizontalStackLayout>
+                    <CheckBox ClassId="CbPwmLuv" x:Name="CbPwmLuv" Color="Green" Margin="35,0,0,0" CheckedChanged="CheckboxChanged" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
+                    <Label x:Name="LblColor" Text="LUV" VerticalOptions="Center" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
+                </HorizontalStackLayout>
             </HorizontalStackLayout>
 
-            <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="4" ToolTipProperties.Text="Click the the color that should be displayed. Set's the u,v values">
+            <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="6" ToolTipProperties.Text="Click the the color that should be displayed. Set's the u,v values"
+                   BackgroundColor="White">
                 <Image.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTab" NumberOfTapsRequired="1"/>
                 </Image.GestureRecognizers>
             </Image>
         </Grid>
-
-       
 
         <!--LED stats-->
         <Border StrokeThickness="1" Grid.Row="3" Grid.ColumnSpan="4" Grid.Column="0" Grid.RowSpan="2">

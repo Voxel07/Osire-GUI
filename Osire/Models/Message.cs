@@ -27,7 +27,7 @@ namespace Osire.Models
         {
             RESET_LED, CLEAR_ERROR, INITBIDIR, INITLOOP, GOSLEEP, GOACTIVE, GODEEPSLEEP,
             READSTATUS = 0x40, READTEMPST = 0x42, READCOMST = 0x44, READLEDST = 0x46, READTEMP = 0x48, READOTTH = 0x4A, SETOTTH,
-            READSETUP, SETSETUP, READPWM, SETPWM, SETSETUPSR, SETPWMSR, SETOTTHSR, READOTP = 0x58
+            READSETUP, SETSETUP, READPWM, SETPWM, SETSETUPSR, SETPWMSR, SETOTTHSR, READOTP = 0x58, SETLUV = 0x69
         }
         public enum MessageTypes
         {
@@ -107,15 +107,21 @@ namespace Osire.Models
                     case PossibleCommands.SETSETUPSR:
                         writer.Write(Setup);            //[6]
                         break;
-                    case PossibleCommands.SETPWM:
-                    case PossibleCommands.SETPWMSR:
+                    case PossibleCommands.SETLUV:
                         //Set MSB of the pwm value to slect max current
-                        //U |= (ushort)((CurrentRed ? 1 : 0) << 15);
-                        //V |= (ushort)((CurrentGreen ? 1 : 0) << 15);
-                        //Lv |= (ushort)((CurrentBlue ? 1 : 0) << 15);
                         writer.Write(U);            //[6]+[7]
                         writer.Write(V);            //[8]+[9]
                         writer.Write(Lv);           //[10]+[11]
+                        break;
+                    case PossibleCommands.SETPWM:
+                    case PossibleCommands.SETPWMSR:
+                        //Set MSB of the pwm value to slect max current
+                        PwmRed |= (ushort)((CurrentRed ? 1 : 0) << 15);
+                        PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
+                        PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
+                        writer.Write(PwmRed);            //[6]+[7]
+                        writer.Write(PwmGreen);            //[8]+[9]
+                        writer.Write(PwmBlue);           //[10]+[11]
                         break;
                     default:
                         break;

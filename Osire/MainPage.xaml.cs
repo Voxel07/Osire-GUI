@@ -329,7 +329,7 @@ public partial class MainPage : ContentPage
         LED led = e.SelectedItem as LED;
         int pos = e.SelectedItemIndex;
         countedLeds.SelectedItem = led;
-        lblSelectedLed.Text = led.Address.ToString();
+        lblSelectedLed.Text = led.Address.ToString(); //Fehler möglich 
         myMessage.Address = led.Address;
         Light.SelectedLed = led.Address;
         EntryLedAddr.Text = led.Address.ToString();
@@ -869,7 +869,7 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblSetClkP.Text = led.CLK_INV);
                 Dispatcher.Dispatch(() => CbSetClkP.IsChecked = led.CLK_INV == "LOW");
                 Dispatcher.Dispatch(() => LblSetCrcEn.Text = led.CRC_EN);
-                Dispatcher.Dispatch(() => CbSetCrcEn.IsChecked = led.CRC_EN == "Enabled");
+                Dispatcher.Dispatch(() => CbSetCrcEn.IsChecked = led.CRC_EN == "ENABLED");
                 Dispatcher.Dispatch(() => LblSetTempClk.Text = led.TEMPCLK);
                 Dispatcher.Dispatch(() => CbSetTempClk.IsChecked = led.TEMPCLK == "2.4 kHz");
                 Dispatcher.Dispatch(() => LblSetCe.Text = led.CE_FSAVE);
@@ -924,11 +924,88 @@ public partial class MainPage : ContentPage
         return true;
     }
 
-    async void OnSliderChanged(object sender, ValueChangedEventArgs e)
+    private void ButtonIncrement(object sender, EventArgs e)
     {
-        lableBrightnes.Text = e.NewValue.ToString();
-        myMessage.Lv = (ushort)e.NewValue;
+        Button button = sender as Button;
 
+        switch (button.ClassId)
+        {
+            case "BtnIncBrightnes":
+                myMessage.Lv += 1;
+                lableBrightnes.Text = myMessage.Lv.ToString();
+                break;
+            case "BtnIncRed":
+                myMessage.PwmRed += 1;
+                lablePwmRed.Text = myMessage.PwmRed.ToString();
+                break;
+            case "BtnIncGreen":
+                myMessage.PwmGreen += 1;
+                lablePwmGreen.Text = myMessage.PwmGreen.ToString();
+                break;
+            case "BtnIncBlue":
+                myMessage.PwmBlue += 1;
+                lablePwmBlue.Text = myMessage.PwmBlue.ToString();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void ButtonDecrement(object sender, EventArgs e)
+    {
+        Button button = sender as Button;
+
+        switch (button.ClassId)
+        {
+            case "BtnDecBrightnes":
+                myMessage.Lv -= 1;
+                lableBrightnes.Text = myMessage.Lv.ToString();
+                sliderBrightnes.Value = myMessage.Lv;
+                break;
+            case "BtnDecRed":
+                myMessage.PwmRed -= 1;
+                lablePwmRed.Text = myMessage.PwmRed.ToString();
+                sliderPwmRed.Value = myMessage.PwmRed;
+                break;
+            case "BtnDecGreen":
+                myMessage.PwmGreen -= 1;
+                lablePwmGreen.Text = myMessage.PwmGreen.ToString();
+                sliderPwmGreen.Value = myMessage.PwmGreen;
+                break;
+            case "BtnDecBlue":
+                myMessage.PwmBlue -= 1;
+                lablePwmBlue.Text = myMessage.PwmBlue.ToString();
+                sliderPwmBlue.Value = myMessage.PwmBlue;
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async void OnSliderChanged(object sender, ValueChangedEventArgs e)
+    {
+        Slider slider = sender as Slider;
+        switch (slider.ClassId)
+        {
+            case "sliderBrightnes":
+                lableBrightnes.Text = e.NewValue.ToString();
+                myMessage.Lv = (ushort)e.NewValue;
+                break;
+            case "sliderPwmRed":
+                lablePwmRed.Text = e.NewValue.ToString();
+                myMessage.PwmRed = (ushort)e.NewValue;
+                break;
+            case "sliderPwmGreen":
+                lablePwmGreen.Text = e.NewValue.ToString();
+                myMessage.PwmGreen = (ushort)e.NewValue;
+                break;
+            case "sliderPwmBlue":
+                lablePwmBlue.Text = e.NewValue.ToString();
+                myMessage.PwmBlue = (ushort)e.NewValue;
+                break;
+            default:
+                break;
+        }
 
         if (CbLiveUpdate.IsChecked)
         {
@@ -937,11 +1014,46 @@ public partial class MainPage : ContentPage
                 lblLightState.Text = "Init not complete";
                 return;
             }
-            myMessage.Command = PossibleCommands.SETPWM;
+            if (CbPwmLuv.IsChecked)
+            {
+                myMessage.Command = PossibleCommands.SETPWM;
+            }
+            else
+            {
+                myMessage.Command = PossibleCommands.SETLUV;
+            }
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
             CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+        }
+    }
+
+    private void OnUvChange(object sender, EventArgs e)
+    {
+        Entry entry = sender as Entry;
+
+        if(!UInt16.TryParse(entry.Text, out UInt16 value))
+        {
+            lblLightState.Text = "Nur Zahlen >= 0";
+            return;
+        }   
+        if(value > 65535)
+        {
+            lblLightState.Text = "Wert muss kleiner 65535 sein";
+            return;
+        }
+        lblLightState.Text = "";
+        switch (entry.ClassId)
+        {
+            case "EntryU":
+                myMessage.U = value;
+                break;
+            case "EntryV":
+                myMessage.V = value;
+                break;
+            default:
+                break;
         }
     }
 
@@ -963,8 +1075,8 @@ public partial class MainPage : ContentPage
         ushort u = (ushort)(currentX);
         ushort v = (ushort)(currentY);
 
-        LblX.Text = "U: " + u;
-        LblY.Text = "V: " + v;
+        EntryU.Text = u.ToString();
+        EntryV.Text = v.ToString();
         myMessage.U = u;
         myMessage.V = v;
 
@@ -975,14 +1087,21 @@ public partial class MainPage : ContentPage
                 lblLightState.Text = "Init not complete";
                 return;
             }
+
+            if (CbPwmLuv.IsChecked)
+            {
+                myMessage.Command = PossibleCommands.SETPWM;
+            }
+            else
+            {
+                myMessage.Command = PossibleCommands.SETLUV;
+            }
             myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-            myMessage.Command = PossibleCommands.SETPWM;
             myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
             CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
-
     }
 
     private async void UpdateColor(object sender, EventArgs e)
@@ -994,52 +1113,44 @@ public partial class MainPage : ContentPage
         }
 
         Button btn = sender as Button;
-        myMessage.Command = PossibleCommands.SETPWM;
+        if (CbPwmLuv.IsChecked)
+        {
+            myMessage.Command = PossibleCommands.SETPWM;
+        }
+        else
+        {
+            myMessage.Command = PossibleCommands.SETLUV;
+        }
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
         myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
         CheckBroadcast();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
 
-    private void cbCurrentRedChanged(object sender, CheckedChangedEventArgs e)
+    private void CheckboxChanged(object sender, CheckedChangedEventArgs e)
     {
-        if (e.Value)
-        {
-            lblCurrentRed.Text = "Red 10mA";
-            myMessage.CurrentRed = false;
-        }
-        else
-        {
-            lblCurrentRed.Text = "Red 50mA";
-            myMessage.CurrentRed = true;
-        }
-    }
+        CheckBox cb = sender as CheckBox;
 
-    private void cbCurrentGreenChanged(object sender, CheckedChangedEventArgs e)
-    {
-        if (e.Value)
+        switch (cb.ClassId)
         {
-            lblCurrentGreen.Text = "Green 10mA";
-            myMessage.CurrentGreen = false;
-        }
-        else
-        {
-            lblCurrentGreen.Text = "Green 50mA";
-            myMessage.CurrentGreen = true;
-        }
-    }
+            case "cbCurrentRed":
+                lblCurrentRed.Text = (e.Value == true ? "Red 10mA": "Red 50mA");
+                myMessage.CurrentRed = !e.Value;
+                break;
+            case "cbCurrentGreen":
+                lblCurrentGreen.Text = (e.Value == true ? "Green 10mA" : "Green 50mA");
+                myMessage.CurrentGreen = !e.Value;
+                break;
+            case "cbCurrentBlue":
+                lblCurrentBlue.Text = (e.Value == true ? "Blue 10mA" : "Blue 50mA");
+                myMessage.CurrentBlue = !e.Value;
+                break;
+            case "CbPwmLuv":
+                LblColor.Text = (e.Value == true ? "PWM" : "LUV");
+                break;
 
-    private void cbCurrentBlueChanged(object sender, CheckedChangedEventArgs e)
-    {
-        if (e.Value)
-        {
-            lblCurrentBlue.Text = "Blue 10mA";
-            myMessage.CurrentBlue = false;
-        }
-        else
-        {
-            lblCurrentBlue.Text = "Blue 50mA";
-            myMessage.CurrentBlue = true;
+            default:
+                break;
         }
     }
 
@@ -1054,7 +1165,7 @@ public partial class MainPage : ContentPage
         {
             return; //Nothing to update
         }
-        LED led = Light.LEDs.ElementAt(addr);
+        LED led = Light.LEDs.ElementAt(addr); // Fehler bei negativen Zahlen
         led = Light.LEDs.ElementAt(Light.SelectedLed - 1);
 
         EntryCurrentTemp.Text = led.Temperature.ToString();

@@ -147,16 +147,14 @@ namespace Osire.Models
                 writer.WriteLine(BlueNightV);
                 writer.WriteLine("---------------------");
                 writer.WriteLine();
-
             }
-
         }
 
         public void SetPWM(ref Message msg)
         {
-            PwmRed = (msg.CurrentRed == true ? "50":"10") + "|" + (msg.PwmRed |= (ushort)((0) << 15));
-            PwmGreen = (msg.CurrentGreen == true ? "50" : "10") + "|" + (msg.PwmGreen |= (ushort)((0) << 15));
-            PwmBlue = (msg.CurrentBlue == true ? "50" : "10") + "|" + (msg.PwmBlue |= (ushort)((0) << 15));
+            PwmRed = (msg.CurrentRed == true ? "50":"10") + "|" + (msg.PwmRed &= 0x7FFF);
+            PwmGreen = (msg.CurrentGreen == true ? "50" : "10") + "|" + (msg.PwmGreen &= 0x7FFF);
+            PwmBlue = (msg.CurrentBlue == true ? "50" : "10") + "|" + (msg.PwmBlue &= 0x7FFF);
             TimeStampPwm = DateTime.Now.ToString("HH:mm:ss");
         }
 
@@ -230,7 +228,14 @@ namespace Osire.Models
 
         public void SetTemp(ref Message msg)
         {
-            Temperature = (byte)(msg.Temperature - 113);
+            if(msg.Temperature > 113)
+            {
+                Temperature = (byte)(msg.Temperature - 113);
+            }
+            else
+            {
+                Temperature = (byte)(msg.Temperature);
+            }
             TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 
