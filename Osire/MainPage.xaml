@@ -33,7 +33,7 @@
                 ToolTipProperties.Text="This will reset the application"/>
         <Button Text="Lauflicht"
                 x:Name="BtnLauflicht"
-                Clicked="GoToDemosPage"
+                Clicked="DemoLauflicht"
                 Grid.Row="0"
                 Grid.Column="0"
                 MaximumHeightRequest="50"
@@ -49,6 +49,20 @@
                 MaximumWidthRequest="150"
                 IsEnabled="False"
                 ToolTipProperties.Text="Enabled after Init"/>
+        <Button Text="Go to Demo Page"
+                Clicked="GoToDemosPage"
+                Grid.Row="0"
+                Grid.Column="2"
+                MaximumHeightRequest="50"
+                MaximumWidthRequest="150"
+                ToolTipProperties.Text="Switch to Demo page"/>
+        <Button Text="TempCompDemo"
+                Clicked="TempCompDemo"
+                Grid.Row="1"
+                Grid.Column="2"
+                MaximumHeightRequest="50"
+                MaximumWidthRequest="150"
+                ToolTipProperties.Text="Start the Temperature Compensation Demo"/>
 
         <!--Light config-->
         <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="0" >
@@ -74,28 +88,6 @@
                 Grid.Row="0"
                 Grid.Column="0"/>
 
-                <!--<Button Text="Init LED"
-                ToolTipProperties.Text="Init the Leds"
-                VerticalOptions="Center"
-                HorizontalOptions="Start"
-                Clicked="InitLED" 
-                x:Name="BtnInitLED"
-                IsEnabled="False"
-                WidthRequest="100"
-                Grid.Row="1"
-                Grid.Column="0"/>-->
-
-                <!--<Button Text="Set conf"
-                ToolTipProperties.Text="Set a default config"   
-                x:Name="BtnSetConfig"
-                VerticalOptions="Center"
-                HorizontalOptions="Start"
-                WidthRequest="100"
-                Clicked="SetConfig" 
-                IsEnabled="True"
-                Grid.Row="2"
-                Grid.Column="0"/>-->
-            
                 <Button Text="On"
                 ToolTipProperties.Text="Well it's a light switch"        
                 VerticalOptions="Center"
@@ -170,6 +162,13 @@
 
             </Grid>
         </Border>
+        <Border Grid.Row="2" Grid.Column="2">
+            <HorizontalStackLayout MaximumHeightRequest="35">
+                <CheckBox CheckedChanged="cbRefreshCheckedChanged"/>
+                <Label x:Name="LblTest" Text="Test" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+            
+        </Border>
         
         <!--Farben-->
         <Grid Grid.Row="1" Grid.Column="4" Grid.ColumnSpan="3">
@@ -220,7 +219,7 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="0,0,10,10"/>
                     </Border.StrokeShape>
-                    <Button class="Set" ClassId="BtnDecRed" Clicked="SetCommand" CornerRadius="0" MaximumHeightRequest="12"/>
+                    <Button class="Set" ClassId="BtnDecRed" Clicked="ButtonDecrement" CornerRadius="0" MaximumHeightRequest="12"/>
                 </Border>
             </VerticalStackLayout>
             <Label Padding="10,5,0,0" x:Name="lablePwmRed" Text="0" Grid.Row="1" Grid.Column="2"/>
@@ -294,19 +293,19 @@
                 <CheckBox x:Name="CbLiveUpdate" Color="Green" Margin="35,0,0,0" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
                 <Label Text="Live Update" VerticalOptions="Center" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
                 <StackLayout Grid.Row="3" Orientation="Horizontal" Spacing="5" Grid.Column="3" Grid.ColumnSpan="2" VerticalOptions="Center"  Margin="35,0,0,0" ToolTipProperties.Text="Raw U and V Data">
-                    <Label Text="U'" VerticalOptions="Center"/>
+                    <Label Text="u'" VerticalOptions="Center"/>
                     <Entry ClassId="EntryU" x:Name="EntryU" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
-                    <Label Text="V'" VerticalOptions="Center"/>
+                    <Label Text="v'" VerticalOptions="Center"/>
                     <Entry ClassId="EntryV" x:Name="EntryV" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
                 </StackLayout>
                 <HorizontalStackLayout>
                     <CheckBox ClassId="CbPwmLuv" x:Name="CbPwmLuv" Color="Green" Margin="35,0,0,0" CheckedChanged="CheckboxChanged" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
-                    <Label x:Name="LblColor" Text="LUV" VerticalOptions="Center" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
+                    <Label x:Name="LblColor" Text="Luv" VerticalOptions="Center" ToolTipProperties.Text="Select whether RGB or Luv values should be send"/>
                 </HorizontalStackLayout>
             </HorizontalStackLayout>
 
             <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="6" ToolTipProperties.Text="Click the the color that should be displayed. Set's the u,v values"
-                   BackgroundColor="White">
+                   BackgroundColor="Black">
                 <Image.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTab" NumberOfTapsRequired="1"/>
                 </Image.GestureRecognizers>
@@ -346,10 +345,7 @@
 
                     <Label Text="LED:" Grid.Row="0" Grid.Column="0" VerticalOptions="Center" ToolTipProperties.Text="Currently Selected Led"/>
                     <Label x:Name="lblSelectedLed" Text="1024" Padding="50,0,0,0" Grid.Row="0" Grid.Column="0" VerticalOptions="Center" ToolTipProperties.Text="Currently Selected Led"/>
-                    <!--<CheckBox x:Name="CbAutoRefresh" Color="Green" Grid.Row="0" Grid.Column="1" CheckedChanged="cbRefreshCheckedChanged" IsEnabled="False"/>
-                    <Label Text="Auto Refresh" VerticalOptions="Center" Margin="35,0,0,0" Grid.Row="0" Grid.Column="1"/>
-                    <CheckBox Color="Green" Grid.Row="0" Grid.Column="2"/>
-                    <Label Text="Temp Correction" VerticalOptions="Center" Margin="35,0,0,0" Grid.Row="0" Grid.Column="2"/>-->
+                   
                 </Grid>
 
                 <Label Text="ComStats" Grid.Row="1" Grid.Column="0" ToolTipProperties.Text="Communication State of the LED"/>
@@ -493,7 +489,7 @@
 
                 <!--LBL second row-->
                 <Label Text="Setup" Grid.Row="4" Grid.Column="0" ToolTipProperties.Text="Set a configuration for the LED"/>
-                <Label Text="Error" Grid.Row="4" Grid.Column="1" ToolTipProperties.Text="Behavior if a communication error flag is raised"/>
+                <Label Text="Error" Grid.Row="4" Grid.Column="1" ToolTipProperties.Text="Behavior if a error flag is raised"/>
                 <Label Text="Otth"  Grid.Row="4" Grid.Column="2" ToolTipProperties.Text="Over Temperature control"/>
 
             <!--BOX 2-->         
@@ -631,30 +627,30 @@
                     <Label Text="day" Grid.Row="2" Grid.Column="5" HorizontalOptions="Center"/>
                     <Label Text="night" Grid.Row="2" Grid.Column="6" HorizontalOptions="Center"/>
 
-                    <Label Text="u" Grid.Row="3" Grid.Column="0" HorizontalOptions="Center"/>
-                    <Label Text="v" Grid.Row="4" Grid.Column="0" HorizontalOptions="Center"/>
-                    <Label Text="lv" Grid.Row="5" Grid.Column="0" HorizontalOptions="Center"/>
+                    <Label Text="u'" Grid.Row="3" Grid.Column="0" HorizontalOptions="Center"/>
+                    <Label Text="v'" Grid.Row="4" Grid.Column="0" HorizontalOptions="Center"/>
+                    <Label Text="L" Grid.Row="5" Grid.Column="0" HorizontalOptions="Center"/>
 
-                    <Label x:Name="LblRedDayU" Text="255" Grid.Row="3" Grid.Column="1" HorizontalOptions="Center"/>
-                    <Label x:Name="LblRedDayV" Text="2" Grid.Row="4" Grid.Column="1" HorizontalOptions="Center"/>
-                    <Label x:Name="LblRedDayLv" Text="3" Grid.Row="5" Grid.Column="1" HorizontalOptions="Center"/>
-                    <Label x:Name="LblRedNightU" Text="255" Grid.Row="3" Grid.Column="2" HorizontalOptions="Center"/>
-                    <Label x:Name="LblRedNightV" Text="5" Grid.Row="4" Grid.Column="2" HorizontalOptions="Center"/>
-                    <Label x:Name="LblRedNightLv" Text="6" Grid.Row="5" Grid.Column="2" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedDayU" Text="0" Grid.Row="3" Grid.Column="1" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedDayV" Text="0" Grid.Row="4" Grid.Column="1" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedDayLv" Text="0" Grid.Row="5" Grid.Column="1" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedNightU" Text="0" Grid.Row="3" Grid.Column="2" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedNightV" Text="0" Grid.Row="4" Grid.Column="2" HorizontalOptions="Center"/>
+                    <Label x:Name="LblRedNightLv" Text="0" Grid.Row="5" Grid.Column="2" HorizontalOptions="Center"/>
 
-                    <Label x:Name="LblGreenDayU" Text="1" Grid.Row="3" Grid.Column="3" HorizontalOptions="Center"/>
-                    <Label x:Name="LblGreenDayV" Text="255" Grid.Row="4" Grid.Column="3" HorizontalOptions="Center"/>
-                    <Label x:Name="LblGreenDayLv" Text="3" Grid.Row="5" Grid.Column="3" HorizontalOptions="Center"/>
-                    <Label x:Name="LblGreenNightU" Text="25" Grid.Row="3" Grid.Column="4" HorizontalOptions="Center"/>
-                    <Label x:Name="LblGreenNightV" Text="5" Grid.Row="4" Grid.Column="4" HorizontalOptions="Center"/>
-                    <Label x:Name="LblGreenNightLv" Text="6" Grid.Row="5" Grid.Column="4" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenDayU" Text="0" Grid.Row="3" Grid.Column="3" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenDayV" Text="0" Grid.Row="4" Grid.Column="3" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenDayLv" Text="0" Grid.Row="5" Grid.Column="3" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenNightU" Text="0" Grid.Row="3" Grid.Column="4" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenNightV" Text="0" Grid.Row="4" Grid.Column="4" HorizontalOptions="Center"/>
+                    <Label x:Name="LblGreenNightLv" Text="0" Grid.Row="5" Grid.Column="4" HorizontalOptions="Center"/>
 
-                    <Label x:Name="LblBlueDayU" Text="1" Grid.Row="3" Grid.Column="5" HorizontalOptions="Center"/>
-                    <Label x:Name="LblBlueDayV" Text="2" Grid.Row="4" Grid.Column="5" HorizontalOptions="Center"/>
-                    <Label x:Name="LblBlueDayLv" Text="3" Grid.Row="5" Grid.Column="5" HorizontalOptions="Center"/>
-                    <Label x:Name="LblBlueNightU" Text="4" Grid.Row="3" Grid.Column="6" HorizontalOptions="Center"/>
-                    <Label x:Name="LblBlueNightV" Text="5" Grid.Row="4" Grid.Column="6" HorizontalOptions="Center"/>
-                    <Label x:Name="LblBlueNightLv" Text="6" Grid.Row="5" Grid.Column="6" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueDayU" Text="0" Grid.Row="3" Grid.Column="5" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueDayV" Text="0" Grid.Row="4" Grid.Column="5" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueDayLv" Text="0" Grid.Row="5" Grid.Column="5" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueNightU" Text="0" Grid.Row="3" Grid.Column="6" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueNightV" Text="0" Grid.Row="4" Grid.Column="6" HorizontalOptions="Center"/>
+                    <Label x:Name="LblBlueNightLv" Text="0" Grid.Row="5" Grid.Column="6" HorizontalOptions="Center"/>
 
                 </Grid>
                 <!--Refresh buttons-->
@@ -743,9 +739,42 @@
                     <Label Text="Options"/>
                     <VerticalStackLayout>
                             <HorizontalStackLayout>
+                                <CheckBox x:Name="cbBroadcast" Color="DarkOrange" IsChecked="True" CheckedChanged="CbBroadcastChanged"/>
                                 <Label Text="Broadcast" VerticalOptions="Center" ToolTipProperties.Text="Broadcast all possible commands"/>
-                            <CheckBox x:Name="cbBroadcast" Margin="10,0,0,0" Color="Green" IsChecked="True" CheckedChanged="CbBroadcastChanged"/>
                             </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <CheckBox x:Name="cbStatusRequest" Color="DarkOrange" CheckedChanged="CbStatusRequestChanged"/>
+                                <Label Text="SR" VerticalOptions="Center" ToolTipProperties.Text="Select if the Status Request Bit is set in the SetCommand"/>
+                            </HorizontalStackLayout>
+                            <!--<HorizontalStackLayout>
+                                <CheckBox x:Name="CbAutoRefresh" Color="DarkOrange" CheckedChanged="cbRefreshCheckedChanged"/>
+                                <Label Text="Auto Refresh" VerticalOptions="Center" />
+                            </HorizontalStackLayout>-->
+                            <!--<HorizontalStackLayout>
+                                <CheckBox Color="Green"/>
+                                <Label Text="Temp Correction" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>-->
+                        <!--<Button Text="Init LED"
+                            ToolTipProperties.Text="Init the Leds"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Start"
+                            Clicked="InitLED" 
+                            x:Name="BtnInitLED"
+                            IsEnabled="False"
+                            WidthRequest="100"
+                            Grid.Row="1"
+                            Grid.Column="0"/>
+
+                            <Button Text="Set conf"
+                            ToolTipProperties.Text="Set a default config"   
+                            x:Name="BtnSetConfig"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Start"
+                            WidthRequest="100"
+                            Clicked="SetConfig" 
+                            IsEnabled="True"
+                            Grid.Row="2"
+                            Grid.Column="0"/>-->   
                     </VerticalStackLayout>
                 </VerticalStackLayout>
             </Grid>
@@ -754,12 +783,13 @@
       
 
         <!--List of active commands-->
-        <VerticalStackLayout Grid.Row="4" Grid.Column="5" Grid.ColumnSpan="2">
-            <Label Text="Application Error state"/>
+        <!--<VerticalStackLayout Grid.Row="4" Grid.Column="5" Grid.ColumnSpan="2" Grid.RowSpan="4">
+            <Label Text="Application Error state"/>-->
 
-            <Border>
+            <Border Grid.Row="4" Grid.Column="5" Grid.ColumnSpan="2" Grid.RowSpan="4">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition/>
                         <RowDefinition/>
                         <RowDefinition/>
                         <RowDefinition/>
@@ -772,18 +802,21 @@
 
                     <Label Text="Current Command" Grid.Row="0" Grid.Column="0"/>
                     <Label x:Name="runningCommands" Text="dummy" TextColor="Red"  Grid.Row="0" Grid.Column="1"/>
+                    
                     <Label Text="LED State"  Grid.Row="1" Grid.Column="0"/>
                     <Label x:Name="LblLedState" Text="dummy" Grid.Row="1" Grid.Column="1" TextColor="Red"/>
+                   
                     <Label Text="Light State"  Grid.Row="2" Grid.Column="0"/>
-                    <Label x:Name="lblLightState" Text="dummy" HorizontalOptions="Start" VerticalOptions="Center"
+                    <Label x:Name="lblLightState" Text="dummy" HorizontalOptions="Start" VerticalOptions="Start"
                        Grid.Row="2" Grid.Column="1" TextColor="Red"/>
-                    <Label Text="Raw Answer" Grid.Row="3" Grid.Column="0"/>
-                    <Label x:Name="LblRawAnswer" Text="dummy" HorizontalOptions="Start" VerticalOptions="Center"
-                       Grid.Row="3" Grid.Column="1" TextColor="Red"/>
+                    
+                    <Label Text="Raw Answer" Grid.Row="3" Grid.Column="0" Grid.RowSpan="1" />
+                    <Label x:Name="LblRawAnswer" Text="dummy" HorizontalOptions="Start" VerticalOptions="Start"
+                       Grid.Row="3" Grid.Column="1" Grid.RowSpan="1" TextColor="Red"/>
                 </Grid>
 
             </Border>
-        </VerticalStackLayout>
+        <!--</VerticalStackLayout>-->
     </Grid>
 
 </ContentPage>

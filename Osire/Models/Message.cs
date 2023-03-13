@@ -12,7 +12,7 @@ namespace Osire.Models
     [Serializable]
     class Message
     {
-        public enum OSP_ERROR_CODE
+        public enum MCU_ERROR_CODE
         {
             OSP_NO_ERROR = 0x00, /*< no error */
             OSP_ADDRESS_ERROR, /*< invalid device address*/
@@ -27,7 +27,7 @@ namespace Osire.Models
         {
             RESET_LED, CLEAR_ERROR, INITBIDIR, INITLOOP, GOSLEEP, GOACTIVE, GODEEPSLEEP,
             READSTATUS = 0x40, READTEMPST = 0x42, READCOMST = 0x44, READLEDST = 0x46, READTEMP = 0x48, READOTTH = 0x4A, SETOTTH,
-            READSETUP, SETSETUP, READPWM, SETPWM, SETSETUPSR, SETPWMSR, SETOTTHSR, READOTP = 0x58, SETLUV = 0x69
+            READSETUP, SETSETUP, READPWM, SETPWM, SETSETUPSR, SETPWMSR, SETOTTHSR, READOTP = 0x58, SETLUV = 0x69, SETLUVSR
         }
         public enum MessageTypes
         {
@@ -35,7 +35,7 @@ namespace Osire.Models
         }
         public enum PossibleDemos
 {
-            STATIC_COLOR, LED_STRIPE, DIMING, PINGPONG
+            STATIC_COLOR, LED_STRIPE, DIMING, PINGPONG, TEMPCOMP
         }
 
         public PossibleCommands Command { get; set; }
@@ -68,7 +68,7 @@ namespace Osire.Models
         public byte[] OTP { get; set; }
 
         public UInt16 Delay { get; set; }
-        public OSP_ERROR_CODE Error { get; set; }
+        public MCU_ERROR_CODE Error { get; set; }
         public UInt16 Crc { get; set; }
 
 
@@ -108,6 +108,7 @@ namespace Osire.Models
                         writer.Write(Setup);            //[6]
                         break;
                     case PossibleCommands.SETLUV:
+                    case PossibleCommands.SETLUVSR:
                         //Set MSB of the pwm value to slect max current
                         writer.Write(U);            //[6]+[7]
                         writer.Write(V);            //[8]+[9]
@@ -115,13 +116,20 @@ namespace Osire.Models
                         break;
                     case PossibleCommands.SETPWM:
                     case PossibleCommands.SETPWMSR:
-                        //Set MSB of the pwm value to slect max current
-                        PwmRed |= (ushort)((CurrentRed ? 1 : 0) << 15);
-                        PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
-                        PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
-                        writer.Write(PwmRed);            //[6]+[7]
-                        writer.Write(PwmGreen);            //[8]+[9]
-                        writer.Write(PwmBlue);           //[10]+[11]
+                            //Set MSB of the pwm value to slect max current
+                            //UInt16 max = (ushort)((ushort)(CurrentRed ? 1 : 0) << 15);
+                            //PwmRed |= max;
+                            //PwmGreen |= (ushort)((CurrentGreen ? 1 : 0) << 15);
+                            //PwmBlue |= (ushort)((CurrentBlue ? 1 : 0) << 15);
+                           
+                            
+                            PwmRed = SetCurrent(PwmRed, CurrentRed);
+                            PwmBlue = SetCurrent(PwmBlue, CurrentGreen);
+                            PwmGreen = SetCurrent(PwmGreen, CurrentBlue);
+
+                            writer.Write(PwmBlue);           //[10]+[11]
+                            writer.Write(PwmGreen);            //[8]+[9]
+                            writer.Write(PwmRed);            //[6]+[7]
                         break;
                     default:
                         break;
@@ -141,6 +149,20 @@ namespace Osire.Models
             finally { stream.Dispose(); }
         }
 
+        public ushort SetCurrent(ushort pwm, bool current)
+        {
+            ushort val = 1;
+            if (current)
+            {
+                return pwm |= 1 << 15;
+            }
+            else
+            {
+                return pwm &= (ushort)~(val << 15);
+                //pwm &= 0 << 15;
+            }
+        }
+
         public bool DeSerialize(byte[] data)
         {
             this.PSI = data[0];                             //[0]
@@ -149,13 +171,13 @@ namespace Osire.Models
             Array.Resize(ref data, data.Length - 2);
             if (this.Crc != CalculateCRC(data))
             {
-                this.Error = OSP_ERROR_CODE.OSP_ERROR_CRC;
+                this.Error = MCU_ERROR_CODE.OSP_ERROR_CRC;
                 return false;
             
             }
 
             this.Command = (PossibleCommands)data[1];       //[1]
-            this.Error = (OSP_ERROR_CODE)data[2];           //[2]
+            this.Error = (MCU_ERROR_CODE)data[2];           //[2]
             this.Address = BitConverter.ToUInt16(data, 3);  //[3][4]
 
             switch (this.Command)
@@ -185,8 +207,9 @@ namespace Osire.Models
                 case PossibleCommands.SETSETUPSR:
                 case PossibleCommands.SETPWMSR:
                 case PossibleCommands.READTEMPST:
-                    this.Temperature = data[5];
-                    this.Status = data[6];
+                case PossibleCommands.SETLUVSR:
+                    this.Status = data[5];
+                    this.Temperature = (byte)(data[6] - 113);
                     break;
                 case PossibleCommands.READCOMST:
                     this.ComST = data[5];
@@ -195,7 +218,8 @@ namespace Osire.Models
                     this.LedStatus = data[5];
                     break;
                 case PossibleCommands.READTEMP:
-                    this.Temperature = (byte)(data[5] & 0b00111111);
+                    //this.Temperature = (byte)(data[5] & 0b00111111);
+                    this.Temperature = (byte)(data[5] - 113);
                     break;
                 case PossibleCommands.READOTTH:
                     this.OTTH[0] = data[5];
@@ -291,8 +315,16 @@ namespace Osire.Models
         {
             if(Enum.IsDefined(typeof(PossibleCommands), this.Command))
             {
-                PossibleCommands cmd = (PossibleCommands)Enum.ToObject(typeof(PossibleCommands), this.Command);
-                return cmd.ToString();
+                if(this.Type == MessageTypes.DEMO)
+                {
+                    PossibleDemos dm = (PossibleDemos)Enum.ToObject(typeof(PossibleCommands), this.Command);
+                    return dm.ToString();
+                }
+                else
+                {
+                    PossibleCommands cmd = (PossibleCommands)Enum.ToObject(typeof(PossibleCommands), this.Command);
+                    return cmd.ToString();
+                }
             }
             else
             {
@@ -301,9 +333,9 @@ namespace Osire.Models
         }
         public string getErrorCode()
         {
-            if (Enum.IsDefined(typeof(OSP_ERROR_CODE), this.Error))
+            if (Enum.IsDefined(typeof(MCU_ERROR_CODE), this.Error))
             {
-                OSP_ERROR_CODE err = (OSP_ERROR_CODE)Enum.ToObject(typeof(OSP_ERROR_CODE), this.Error);
+                MCU_ERROR_CODE err = (MCU_ERROR_CODE)Enum.ToObject(typeof(MCU_ERROR_CODE), this.Error);
                 return err.ToString();
             }
             else

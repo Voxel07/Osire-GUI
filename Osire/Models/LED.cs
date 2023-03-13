@@ -85,13 +85,6 @@ namespace Osire.Models
         public float BlueNightV { get; set; }
         public float BlueNightLv { get; set; }
 
-
-
-
-
-
-        private long LastUpdated { get; set; } // Indicates when the data of this LED was last refreshed
-
         public LED() { }
 
         public void SetOTP(ref Message msg)
@@ -217,7 +210,7 @@ namespace Osire.Models
                 1 => "ERROR",
                 _ => "default",
             };
-            TimestampStatus = DateTime.Now.ToString("HH:mm:ss");
+            TimestampLedState = DateTime.Now.ToString("HH:mm:ss");
         }
 
         public void SetTempSt(ref Message msg)
@@ -228,14 +221,7 @@ namespace Osire.Models
 
         public void SetTemp(ref Message msg)
         {
-            if(msg.Temperature > 113)
-            {
-                Temperature = (byte)(msg.Temperature - 113);
-            }
-            else
-            {
-                Temperature = (byte)(msg.Temperature);
-            }
+            Temperature = (byte)(msg.Temperature);
             TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 
@@ -243,14 +229,7 @@ namespace Osire.Models
         {
             OtHighValue = (byte)(msg.OTTH.ElementAt(0) - 113);
             OtLowValue = (byte)(msg.OTTH.ElementAt(1) - 113);
-            State = (byte)((msg.OTTH.ElementAt(2)) & 0b00000011) switch
-            {
-                0 => "1 CYCLE",
-                1 => "2 CYCLE",
-                2 => "3 CYCLE",
-                3 => "4 CYCLE",
-                _ => "default",
-            };
+            OrCycle = (byte)(((msg.OTTH.ElementAt(2)) & 0b00000011)+1);
             TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 
