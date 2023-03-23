@@ -45,13 +45,19 @@ namespace Osire.Models
             client.Send(data, data.Length, remotEndPoint);
         }
 
-        public async Task <byte[]> ReceiveMessage()
+        public async Task <byte[]> ReceiveMessage(CancellationToken cT)
         {
             byte[] data = new byte[64]; //39 is the max answer size (OTP)
             
-            await socket.ReceiveAsync(data, 0); //Wait for answer
-            
-            //Waiting = false; //New command can be send now
+            try
+            {
+                await socket.ReceiveAsync(data, 0, cT); //Wait for answer
+            }
+            catch(OperationCanceledException e)
+            {
+                return Array.Empty<byte>();
+            }
+           
             Array.Resize(ref data, (data[1]+1)); //Cut data to size
             return data.Skip(1).ToArray(); //remove preamble 
         }

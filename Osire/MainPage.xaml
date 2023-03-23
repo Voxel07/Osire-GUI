@@ -162,12 +162,18 @@
 
             </Grid>
         </Border>
-        <Border Grid.Row="2" Grid.Column="2">
-            <HorizontalStackLayout MaximumHeightRequest="35">
-                <CheckBox CheckedChanged="cbRefreshCheckedChanged"/>
-                <Label x:Name="LblTest" Text="Test" VerticalOptions="Center"/>
-            </HorizontalStackLayout>
-            
+        <Border Grid.Row="2" Grid.Column="2" StrokeThickness="2" BackgroundColor="DarkRed">
+            <VerticalStackLayout>
+                <HorizontalStackLayout MaximumHeightRequest="35">
+                    <CheckBox CheckedChanged="cbRefreshCheckedChanged"/>
+                    <Label x:Name="LblTest" Text="Test" VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+
+                <Button Text="CancleTask" Clicked="CancleTask"/>
+                <Label Text="!!Das Funktioniert nicht!!" VerticalOptions="End"/>
+
+            </VerticalStackLayout>
+    
         </Border>
         
         <!--Farben-->
@@ -304,7 +310,8 @@
                 </HorizontalStackLayout>
             </HorizontalStackLayout>
 
-            <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="6" ToolTipProperties.Text="Click the the color that should be displayed. Set's the u,v values"
+            <Ellipse x:Name="elli" Stroke="black" StrokeThickness="2" WidthRequest="15" HeightRequest="15" Grid.Row="0" Grid.Column="3" ZIndex="2"/>
+            <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="6" ZIndex="1" 
                    BackgroundColor="Black">
                 <Image.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTab" NumberOfTapsRequired="1"/>
@@ -783,8 +790,18 @@
       
 
         <!--List of active commands-->
-        <!--<VerticalStackLayout Grid.Row="4" Grid.Column="5" Grid.ColumnSpan="2" Grid.RowSpan="4">
-            <Label Text="Application Error state"/>-->
+        <Border Grid.Row="3" Grid.Column="5">
+            <Picker >
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>PingPong</x:String>
+                        <x:String>RunningLight</x:String>
+                        <x:String>TempComp</x:String>
+                        <x:String>IoL</x:String>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+        </Border>
 
             <Border Grid.Row="4" Grid.Column="5" Grid.ColumnSpan="2" Grid.RowSpan="4">
                 <Grid>

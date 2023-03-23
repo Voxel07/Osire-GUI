@@ -14,6 +14,7 @@ using Microsoft.Maui.Animations;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
 using Osire.Pages;
+using System.Collections.ObjectModel;
 
 namespace Osire;
 
@@ -652,13 +653,13 @@ public partial class MainPage : ContentPage
 
     private CancellationTokenSource _cts;
 
-    async void cbRefreshCheckedChanged(object sender, CheckedChangedEventArgs e)
+    void cbRefreshCheckedChanged(object sender, CheckedChangedEventArgs e)
     {
         if (e.Value == true)
         {
             _cts = new CancellationTokenSource();
             //Start Backgorund update
-            await Task.Run(() => DoWorkAsync(_cts.Token));
+            Task.Run(() => DoWorkAsync(_cts.Token));
         }
         else
         {
@@ -668,7 +669,7 @@ public partial class MainPage : ContentPage
             //Wait for the Background Task to finish
             while (!_cts.Token.IsCancellationRequested)
             {
-                await Task.Delay(100);
+                Task.Delay(100);
             }
         }
     }
@@ -684,11 +685,11 @@ public partial class MainPage : ContentPage
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            // await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
-             Dispatcher.Dispatch(() => LblTest.Text = random.Next(1, 1000).ToString());
-
+            await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
+            Dispatcher.Dispatch(() => LblTest.Text = random.Next(1, 1000).ToString());
+            
+           // LblTest.Text = random.Next(1, 1000).ToString();
              await Task.Delay(1000, cancellationToken);
-
         }
     }
 
@@ -724,9 +725,18 @@ public partial class MainPage : ContentPage
             Dispatcher.Dispatch(() => lblLightState.Text = "");
         }
     }
+    CancellationTokenSource cTs = new();
+
+    private void CancleTask(object sender, EventArgs e)
+    {
+        cTs.Cancel();
+        _isTaskRunning = false;
+        Dispatcher.Dispatch(() => lblLightState.Text = "");
+    }
 
     private async Task<bool> SendCommandAsync(Button btn)
     {
+        
         Dispatcher.Dispatch(() => btn.IsEnabled = false); //Disable the button
 
         Dispatcher.Dispatch(() => runningCommands.Text = myMessage.getCommand()); //Update Ui 
@@ -741,7 +751,7 @@ public partial class MainPage : ContentPage
         }
 
         // Handle Answer
-        byte[] tmp = await Task.Run(() => Light.connection.ReceiveMessage()); //Start receive
+        byte[] tmp = await Task.Run(() => Light.connection.ReceiveMessage(cTs.Token)); //Start receive
 
         Light.connection2.Waiting = false; //Next command can be send now
 
@@ -766,7 +776,7 @@ public partial class MainPage : ContentPage
         //Byte[] -> MSG
         if (!myMessage.DeSerialize(tmp))
         {
-            Dispatcher.Dispatch(() => LblRawAnswer.Text = "CRC Error");
+            Dispatcher.Dispatch(() => lblLightState.Text = "CRC Error");
             return false;
         }
 
@@ -1138,6 +1148,7 @@ public partial class MainPage : ContentPage
             CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
+        await elli.TranslateTo(p.Value.X -115 , p.Value.Y-15, 200, Easing.Linear);
     }
 
     private async void UpdateColor(object sender, EventArgs e)
