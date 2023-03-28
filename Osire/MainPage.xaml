@@ -827,7 +827,7 @@
                     <Label x:Name="lblLightState" Text="dummy" HorizontalOptions="Start" VerticalOptions="Start"
                        Grid.Row="2" Grid.Column="1" TextColor="Red"/>
                     
-                    <Label Text="Raw Answer" Grid.Row="3" Grid.Column="0" Grid.RowSpan="1" />
+                    <Label x:Name="time" Text="Raw Answer" Grid.Row="3" Grid.Column="0" Grid.RowSpan="1" />
                     <Label x:Name="LblRawAnswer" Text="dummy" HorizontalOptions="Start" VerticalOptions="Start"
                        Grid.Row="3" Grid.Column="1" Grid.RowSpan="1" TextColor="Red"/>
                 </Grid>

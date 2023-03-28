@@ -55,11 +55,31 @@ namespace Osire.Models
             }
             catch(OperationCanceledException e)
             {
+                Console.WriteLine(e);
                 return Array.Empty<byte>();
             }
            
             Array.Resize(ref data, (data[1]+1)); //Cut data to size
             return data.Skip(1).ToArray(); //remove preamble 
+        }
+
+        public async Task<byte[]> Receive(CancellationToken cT)
+        {
+            byte[] data = new byte[64]; //39 is the max answer size (OTP)
+            //data = client.ReceiveAsync().Result.Buffer;
+
+            try
+            {
+                await socket.ReceiveAsync(data, 0, cT); //Wait for answer
+            }
+            catch (OperationCanceledException e)
+            {
+                Console.WriteLine(e);
+                return Array.Empty<byte>();
+            }
+
+            Array.Resize(ref data, (data[0])); //Cut data to size
+            return data; //remove preamble 
         }
 
         public void Dispose()

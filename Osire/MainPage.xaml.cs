@@ -58,7 +58,7 @@ public partial class MainPage : ContentPage
     private async void TempCompDemo(object sender, EventArgs e)
     {
         Button btn = sender as Button;
-
+        myMessage.PSI = 7;
         myMessage.Type = DEMO;
         myMessage.Command = (PossibleCommands)PossibleDemos.TEMPCOMP;
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
@@ -693,6 +693,56 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private async void Listen()
+    {
+        LED led = Light.LEDs.ElementAt(20);
+        byte[] data = new byte[64];
+       
+        try
+        {
+            while(true)
+            {
+                string ans = "";
+                data = await Light.connection.Receive(cTs.Token);
+                myMessage.Status = data[1];
+                myMessage.Temperature = (byte)(data[2] - 113);
+                myMessage.PwmBlue = BitConverter.ToUInt16(data, 3);
+                myMessage.PwmGreen = BitConverter.ToUInt16(data, 5);
+                myMessage.PwmRed = BitConverter.ToUInt16(data, 7);
+                for (int i = 0; i < data.Length; i++)
+                {
+                    ans += data[i].ToString() + "|";
+                }
+
+                Dispatcher.Dispatch(() => LblRawAnswer.Text = ans);
+                Dispatcher.Dispatch(() => time.Text = DateTime.Now.ToString("HH:mm:ss:ff"));
+                led.SetTempSt(ref myMessage);
+                Dispatcher.Dispatch(() => EntryCurrentTemp.Text = led.Temperature.ToString());
+                Dispatcher.Dispatch(() => LblState.Text = led.State);
+                Dispatcher.Dispatch(() => LblOtpCrc.Text = led.OtpCRC);
+                Dispatcher.Dispatch(() => LblCom.Text = led.Com);
+                Dispatcher.Dispatch(() => LblStatusCe.Text = led.Error_ce);
+                Dispatcher.Dispatch(() => LblStatusLos.Text = led.Error_los);
+                Dispatcher.Dispatch(() => LblStatusOt.Text = led.Error_ot);
+                Dispatcher.Dispatch(() => LblStatusUv.Text = led.Error_ce);
+                Dispatcher.Dispatch(() => LblRefreshStatus.Text = led.TimestampStatus);
+                Dispatcher.Dispatch(() => LblRefreshOtth.Text = led.TimestampOtth);
+
+                led.SetPWM(ref myMessage);
+                Dispatcher.Dispatch(() => lblPwmRed.Text = led.PwmRed);
+                Dispatcher.Dispatch(() => lblPwmGreen.Text = led.PwmGreen);
+                Dispatcher.Dispatch(() => lblPwmBlue.Text = led.PwmBlue);
+                Dispatcher.Dispatch(() => LblRefreshPwm.Text = led.TimeStampPwm);
+
+            }
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
     private static bool _isTaskRunning = false;
     private static object _look = new object();
 
@@ -712,7 +762,6 @@ public partial class MainPage : ContentPage
                 //Dispatcher.Dispatch(() => lblLightState.Text = "");
                 _isTaskRunning = true;
             }
-
         }
 
         try
@@ -736,7 +785,7 @@ public partial class MainPage : ContentPage
 
     private async Task<bool> SendCommandAsync(Button btn)
     {
-        
+        //cTs.Cancel(); // Ensure any running task is canceld
         Dispatcher.Dispatch(() => btn.IsEnabled = false); //Disable the button
 
         Dispatcher.Dispatch(() => runningCommands.Text = myMessage.getCommand()); //Update Ui 
@@ -747,6 +796,10 @@ public partial class MainPage : ContentPage
         {
             Light.connection2.Waiting = false;
             Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button
+            if (myMessage.Command == (PossibleCommands)PossibleDemos.TEMPCOMP )
+            {
+                await Task.Run(() => Listen());
+            }
             return true;
         }
 
@@ -763,8 +816,7 @@ public partial class MainPage : ContentPage
         }
 
         Dispatcher.Dispatch(() => btn.IsEnabled = true); //Reanable the button after answer is received
-        Dispatcher.Dispatch(() => runningCommands.Text = ""); //Remove running command 
-
+        Dispatcher.Dispatch(() => runningCommands.Text = ""); //Remove running command
         //Display raw Answer data
         string ans = "";
         for (int i = 0; i < tmp.Length; i++)
@@ -869,6 +921,8 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblStatusUv.Text = led.Error_ce);
                 Dispatcher.Dispatch(() => LblRefreshStatus.Text = led.TimestampStatus);
                 Dispatcher.Dispatch(() => LblRefreshOtth.Text = led.TimestampOtth);
+                Dispatcher.Dispatch(() => LblRefreshPwm.Text = led.TimeStampPwm);
+
                 break;
             case PossibleCommands.READCOMST:
                 led.SetComStats(ref myMessage);
@@ -925,6 +979,8 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => lblPwmRed.Text = led.PwmRed);
                 Dispatcher.Dispatch(() => lblPwmGreen.Text = led.PwmGreen);
                 Dispatcher.Dispatch(() => lblPwmBlue.Text = led.PwmBlue);
+                Dispatcher.Dispatch(() => LblRefreshPwm.Text = led.TimeStampPwm);
+
                 break;
             case PossibleCommands.SETPWM:
                 break;

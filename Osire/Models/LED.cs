@@ -10,7 +10,7 @@ namespace Osire.Models
     {
         public UInt16 Address { get; set; }
         
-        public byte Temperature { get; set; }
+        public int Temperature { get; set; }
         public string TimeStampTemp { get; set; }
         //PWM Values
         public string PwmRed { get; set; }
@@ -221,7 +221,7 @@ namespace Osire.Models
 
         public void SetTemp(ref Message msg)
         {
-            Temperature = (byte)(msg.Temperature);
+            Temperature = msg.Temperature;
             TimestampOtth = DateTime.Now.ToString("HH:mm:ss");
         }
 

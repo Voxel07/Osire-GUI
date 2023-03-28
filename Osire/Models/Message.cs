@@ -62,7 +62,7 @@ namespace Osire.Models
         public byte ComST { get; set; }
         public byte Status { get; set; }
         public byte LedStatus { get; set; }
-        public byte Temperature { get; set; }
+        public int Temperature { get; set; }
         public byte[] OTTH { get; set; }
         public byte Setup { get; set; }
         public byte[] OTP { get; set; }
@@ -187,7 +187,7 @@ namespace Osire.Models
                 case PossibleCommands.CLEAR_ERROR:
                     break;
                 case PossibleCommands.INITBIDIR:
-                    this.Temperature = data[5]; 
+                    this.Temperature = data[5] - 113; 
                     this.Status = data[6];
                     this.LedCount = BitConverter.ToUInt16(data, 7);     //[7][8]
                     this.Address = this.LedCount;
@@ -209,7 +209,7 @@ namespace Osire.Models
                 case PossibleCommands.READTEMPST:
                 case PossibleCommands.SETLUVSR:
                     this.Status = data[5];
-                    this.Temperature = (byte)(data[6] - 113);
+                    this.Temperature = data[6] - 113;
                     break;
                 case PossibleCommands.READCOMST:
                     this.ComST = data[5];
@@ -218,8 +218,8 @@ namespace Osire.Models
                     this.LedStatus = data[5];
                     break;
                 case PossibleCommands.READTEMP:
-                    //this.Temperature = (byte)(data[5] & 0b00111111);
-                    this.Temperature = (byte)(data[5] - 113);
+                    //this.Temperature = (data[5] & 0b00111111);
+                    this.Temperature = data[5] - 113;
                     break;
                 case PossibleCommands.READOTTH:
                     this.OTTH[0] = data[5];
