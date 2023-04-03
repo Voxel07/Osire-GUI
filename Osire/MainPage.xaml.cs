@@ -15,6 +15,7 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
 using Osire.Pages;
 using System.Collections.ObjectModel;
+using Osire.ViewModels;
 
 namespace Osire;
 
@@ -23,6 +24,7 @@ public partial class MainPage : ContentPage
     public MainPage()
     {
         InitializeComponent();
+        BindingContext = new DemoViewModel();
     }
 
     private void Reset(object sender, EventArgs e)
@@ -57,17 +59,23 @@ public partial class MainPage : ContentPage
 
     private async void TempCompDemo(object sender, EventArgs e)
     {
-        Button btn = sender as Button;
-        myMessage.PSI = 7;
-        myMessage.Type = DEMO;
-        myMessage.Command = (PossibleCommands)PossibleDemos.TEMPCOMP;
-        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+        
 
     }
 
     //Calsses that will be filled with Data  by the UI
     Leuchte Light = new Leuchte();
     Message myMessage = new Message();
+
+    private async void IOL(object sender, EventArgs e)
+    {
+        Button btn = sender as Button;
+        myMessage.PSI = 7;
+        myMessage.Type = DEMO;
+        myMessage.Command = (PossibleCommands)PossibleDemos.IOL;
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+    }
+
 
     private async void CommandReset(object sender, EventArgs e)
     {
@@ -695,20 +703,29 @@ public partial class MainPage : ContentPage
 
     private async void Listen()
     {
-        LED led = Light.LEDs.ElementAt(20);
+        LED led = Light.GetSlectedLed();
         byte[] data = new byte[64];
        
         try
         {
-            while(true)
+            while (!cTs.IsCancellationRequested)
             {
+                try // catch cancel
+                {
+                    myMessage.Status = data[1];
+                    myMessage.Temperature = (byte)(data[2] - 113);
+                    myMessage.PwmBlue = BitConverter.ToUInt16(data, 3);
+                    myMessage.PwmGreen = BitConverter.ToUInt16(data, 5);
+                    myMessage.PwmRed = BitConverter.ToUInt16(data, 7);
+                }
+                catch (Exception)
+                {
+                    break;
+                    throw;
+                }
                 string ans = "";
                 data = await Light.connection.Receive(cTs.Token);
-                myMessage.Status = data[1];
-                myMessage.Temperature = (byte)(data[2] - 113);
-                myMessage.PwmBlue = BitConverter.ToUInt16(data, 3);
-                myMessage.PwmGreen = BitConverter.ToUInt16(data, 5);
-                myMessage.PwmRed = BitConverter.ToUInt16(data, 7);
+               
                 for (int i = 0; i < data.Length; i++)
                 {
                     ans += data[i].ToString() + "|";
@@ -735,6 +752,7 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblRefreshPwm.Text = led.TimeStampPwm);
 
             }
+            Dispatcher.Dispatch(() => lblLightState.Text = "Not receving");
         }
         catch (Exception)
         {

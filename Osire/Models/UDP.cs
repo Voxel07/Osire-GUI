@@ -29,20 +29,24 @@ namespace Osire.Models
             localEndPoint = new IPEndPoint(IPAddress.Any, PortReceive);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            socket.Bind(localEndPoint);
         }
 
         public void SendMessage(byte[] data)
+        {        
+            client.Send(data, data.Length, remotEndPoint);
+        }
+
+        public void BindSocket()
         {
             if (!socket.IsBound)
             {
                 socket.Bind(localEndPoint);
             }
-            //else
-            //{
-            //    socket.Disconnect(true);
-            //    socket.Bind(localEndPoint);
-            //}
-            client.Send(data, data.Length, remotEndPoint);
+            else
+            {
+                socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true);
+            }
         }
 
         public async Task <byte[]> ReceiveMessage(CancellationToken cT)
@@ -66,7 +70,6 @@ namespace Osire.Models
         public async Task<byte[]> Receive(CancellationToken cT)
         {
             byte[] data = new byte[64]; //39 is the max answer size (OTP)
-            //data = client.ReceiveAsync().Result.Buffer;
 
             try
             {

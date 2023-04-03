@@ -1,13 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Osire.ViewModels
 {
-    public class DemoViewModel
+    public partial class DemoViewModel : ObservableObject
     {
-        public int Id { get; set; } = 1337;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(GetCounter))]
+        int number;
+
+        public string GetCounter
+        {
+            get
+            {
+                return Number switch
+                {
+                    0 => "Click me !",
+                    1 => "Clicked 1 time",
+                    int count => $"Clicked {count} times"
+                };
+            }
+        }
+
+        [RelayCommand]
+        private void IncNum()
+        {
+            Number++;
+        }
+        [RelayCommand]
+        private void DecNum()
+        {
+            Number--;
+        }
     }
 }

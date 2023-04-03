@@ -56,13 +56,24 @@
                 MaximumHeightRequest="50"
                 MaximumWidthRequest="150"
                 ToolTipProperties.Text="Switch to Demo page"/>
-        <Button Text="TempCompDemo"
-                Clicked="TempCompDemo"
-                Grid.Row="1"
-                Grid.Column="2"
-                MaximumHeightRequest="50"
-                MaximumWidthRequest="150"
-                ToolTipProperties.Text="Start the Temperature Compensation Demo"/>
+        <VerticalStackLayout       Grid.Row="1"
+                    Grid.Column="2">
+            
+            <Button Text="TempCompDemo"
+                    Clicked="TempCompDemo"
+              
+                    MaximumHeightRequest="50"
+                    MaximumWidthRequest="150"
+                    ToolTipProperties.Text="Start the Temperature Compensation Demo"/>
+            <Button Text="IOL"
+                    Clicked="IOL"
+               
+                    MaximumHeightRequest="50"
+                    MaximumWidthRequest="150"
+                    ToolTipProperties.Text="Start the IOL Demo"/>
+            <Button Text="{Binding GetCounter}" Command="{Binding IncNumCommand}"/>
+            <Button Text="{Binding GetCounter}" Command="{Binding DecNumCommand}"/>
+        </VerticalStackLayout>
 
         <!--Light config-->
         <Border StrokeThickness="1"  Grid.Row="1" Grid.Column="0" >

@@ -29,12 +29,8 @@ namespace Osire.Models
         }
         public void SetIp(string ip)
         {
-            if(connection != null)
-            {
-                connection.Dispose();
-            }
+            connection?.Dispose();
             connection = new UDP(ip);
-
         }
 
         public void SetLeds(ushort cnt)
@@ -60,6 +56,10 @@ namespace Osire.Models
             //
             //LEDs.ElementAt(address).setSetup;
 
+        }
+        public LED GetSlectedLed()
+        {
+            return this.LEDs.ElementAt(SelectedLed-1);
         }
     }
 }
