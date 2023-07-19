@@ -25,7 +25,14 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
         BindingContext = new DemoViewModel();
+
     }
+
+    //Calsses that will be filled with Data  by the UI
+    Leuchte Light = new Leuchte();
+    Message myMessage = new Message();
+
+
 
     private void Reset(object sender, EventArgs e)
     {
@@ -40,7 +47,7 @@ public partial class MainPage : ContentPage
     private async void DemoLauflicht (object sender, EventArgs e)
     {
         Button btn = sender as Button;
-
+        myMessage.PSI = 8;
         myMessage.Type = DEMO;
         myMessage.Command = (PossibleCommands)PossibleDemos.LED_STRIPE;
 
@@ -51,7 +58,7 @@ public partial class MainPage : ContentPage
     private async void DemoPingPong(object sender, EventArgs e)
     {
         Button btn = sender as Button;
-
+        myMessage.PSI = 8;
         myMessage.Type = DEMO;
         myMessage.Command = (PossibleCommands)PossibleDemos.PINGPONG;
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
@@ -59,23 +66,23 @@ public partial class MainPage : ContentPage
 
     private async void TempCompDemo(object sender, EventArgs e)
     {
-        
-
+        Button btn = sender as Button;
+        myMessage.PSI = 8;
+        myMessage.Type = DEMO;
+        myMessage.Command = (PossibleCommands)PossibleDemos.TEMPCOMP;
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
 
-    //Calsses that will be filled with Data  by the UI
-    Leuchte Light = new Leuchte();
-    Message myMessage = new Message();
+   
 
     private async void IOL(object sender, EventArgs e)
     {
         Button btn = sender as Button;
-        myMessage.PSI = 7;
+        myMessage.PSI = 8;
         myMessage.Type = DEMO;
         myMessage.Command = (PossibleCommands)PossibleDemos.IOL;
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
-
 
     private async void CommandReset(object sender, EventArgs e)
     {
@@ -93,7 +100,7 @@ public partial class MainPage : ContentPage
         myMessage.SetMessageToReset();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        if (myMessage.Error != 0)
+        if (!myMessage.rawErrorCode.Equals(0))
         {
             lblLightState.Text = "Error while resetting";
             return;
@@ -104,7 +111,7 @@ public partial class MainPage : ContentPage
 
         //Init
         if (!await InitLED(sender, e)) return;
-        if (myMessage.Error != 0)
+        if (!myMessage.rawErrorCode.Equals(0))
         {
             lblLightState.Text = "Error during init";
             return;
@@ -112,7 +119,7 @@ public partial class MainPage : ContentPage
 
         //Config
         if (!await SetConfig(sender, e)) return;
-        if (myMessage.Error != 0)
+        if (!myMessage.rawErrorCode.Equals(0))
         {
             lblLightState.Text = "Error during setup";
             return;
@@ -134,11 +141,12 @@ public partial class MainPage : ContentPage
         myMessage.SetMessageToInit();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        if (myMessage.Error != 0) return false;
+        if (!myMessage.rawErrorCode.Equals(0)) return false;
 
         if (myMessage.LedCount != Light.LedCount)
         {
-            lblLightState.Text = "LED cnt missmatch Detected:" + myMessage.Address + "| Expected: " + EntryLedCount.Text;
+            Dispatcher.Dispatch(() => lblLightState.Text = "LED cnt missmatch Detected:" + myMessage.Address + "| Expected: " + EntryLedCount.Text);
+            
             return false;
         }
 
@@ -157,9 +165,7 @@ public partial class MainPage : ContentPage
             LblLedState.Text = "Updating the UI failed";
         }
 
-
         return true;
-
     }
 
     private async Task<bool> SetConfig(object sender, EventArgs e)
@@ -176,7 +182,7 @@ public partial class MainPage : ContentPage
 
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        if (myMessage.Error == 0)
+        if (myMessage.rawErrorCode.Equals(0))
         {
             cbStateLightSetup.IsChecked = true;
             BtnActivateLight.IsEnabled = true;
@@ -191,7 +197,7 @@ public partial class MainPage : ContentPage
     {
         Button btn = sender as Button;
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 7;
+        myMessage.PSI = 8;
         myMessage.Address = 0;
 
         if (Light.LedsAreActive)
@@ -204,7 +210,7 @@ public partial class MainPage : ContentPage
         }
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
 
-        if (myMessage.Error == 0)
+        if (myMessage.rawErrorCode.Equals(0))
         {
             cbStateLedsActiv.IsChecked = !cbStateLedsActiv.IsChecked;
             Light.LedsAreActive = !Light.LedsAreActive;
@@ -227,7 +233,7 @@ public partial class MainPage : ContentPage
         }
         LED led = Light.LEDs[Light.SelectedLed - 1];
 
-        myMessage.PSI = 7;
+        myMessage.PSI = 8;
 
         if (led.State == "ACTIVE")
         {
@@ -333,7 +339,7 @@ public partial class MainPage : ContentPage
 
         if (pos > 0)
         {
-            countedLeds.ScrollTo(Light.LEDs.ElementAt(pos - 1), ScrollToPosition.Start, true);
+            countedLeds.ScrollTo(Light.LEDs.ElementAt(pos - 1).Address, position: ScrollToPosition.Start, animate: true);
             //countedLeds.SelectedItem
             EntryLedAddr.Text = pos.ToString();
             countedLeds.SelectedItem = Light.LEDs.ElementAt(pos - 1) ;
@@ -345,16 +351,18 @@ public partial class MainPage : ContentPage
     }
 
     //Handle LED selection from ListView
-    void svLedSelected(object sender, SelectedItemChangedEventArgs e)
+    void svLedSelected(object sender, SelectionChangedEventArgs e)
     {
-        LED led = e.SelectedItem as LED;
-        int pos = e.SelectedItemIndex;
-        countedLeds.SelectedItem = led;
-        lblSelectedLed.Text = led.Address.ToString(); //Fehler möglich 
-        myMessage.Address = led.Address;
-        Light.SelectedLed = led.Address;
-        EntryLedAddr.Text = led.Address.ToString();
-        UpdateUiWhenSelectedLedChanged();
+        LED led = e.CurrentSelection.FirstOrDefault() as LED;
+        if(led != null)
+        {
+            countedLeds.SelectedItem = led;
+            lblSelectedLed.Text = led.Address.ToString(); //Fehler möglich 
+            myMessage.Address = led.Address;
+            Light.SelectedLed = led.Address;
+            EntryLedAddr.Text = led.Address.ToString();
+            UpdateUiWhenSelectedLedChanged();
+        }
     }
 
     async void Refresh(object sender, EventArgs e)
@@ -383,9 +391,72 @@ public partial class MainPage : ContentPage
                 return;
         }
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 7; // PSI (1) + Type (1) + Command (1) + Address (2) +  CRC (2)
+        myMessage.PSI = 8; // PSI (1) + Type (1) + Command (1) + Address (2) +  CRC (2)
 
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+    }
+
+    private double scaleNumber(double value, double oldMin, double oldMax, double newMin, double newMax)
+    {
+        return ((value - oldMin) / (oldMax - oldMin)) * (newMax - newMin) + newMin;
+    }
+
+    private async void GetGamut(object sender, EventArgs e)
+    {
+        if (!Light.LedCountSet || !Light.IpSet || !Light.LedsWereReset || !Light.LedsWereInitialized)
+        {
+            lblLightState.Text = "Init not complete";
+            return;
+        }
+        Button btn = sender as Button;
+        myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
+        myMessage.PSI = 8; // PSI (1) + Type (1) + Command (1) + Address (2) +  CRC (2)
+        myMessage.Address = Light.SelectedLed;
+        myMessage.Command = PossibleCommands.GETGAMUT;
+
+        await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
+
+        if (!myMessage.rawErrorCode.Equals(0))
+        {
+            lblLightState.Text = "Error during GetGamut";
+            return;
+        }
+        // U = X | V = Y
+        Point cornerRedDay =    new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 0),  0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 4),  0, 65535, 0, img.Height));
+        Point cornerGreenDay =  new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 12), 0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 16), 0, 65535, 0, img.Height));
+        Point cornerBlueDay =   new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 24), 0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 28), 0, 65535, 0, img.Height));
+
+        Point cornerRedNight =      new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 36), 0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 40), 0, 65535, 0, img.Height));
+        Point cornerGreenNight =    new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 48), 0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 52), 0, 65535, 0, img.Height));
+        Point cornerBlueNight =     new Point(scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 60), 0, 65535, 0, img.Width), img.Height - scaleNumber(BitConverter.ToUInt32(myMessage.Gamut, 64), 0, 65535, 0, img.Height));
+
+        PathGeometry pathDay = (PathGeometry)GammutDay.Data;
+        pathDay.Figures[0].StartPoint = cornerBlueDay;
+
+        PathSegmentCollection segmentsDay = pathDay.Figures[0].Segments;
+
+        ((LineSegment)segmentsDay[0]).Point = cornerRedDay;
+        ((LineSegment)segmentsDay[1]).Point = cornerGreenDay;
+        ((LineSegment)segmentsDay[2]).Point = cornerBlueDay;
+
+        RGD.TranslationX = cornerRedDay.Y;
+        RGD.TranslationY = cornerRedDay.X;
+
+        //ToolTipProperties.SetText(RGD, $"u:{cornerRedDay.Y}|v: {cornerRedDay.X}");
+        //await RGD.TranslateTo(cornerRedDay.Y, cornerRedDay.X, 1000, Easing.Linear);
+        //ToolTipProperties.SetText(RBD, $"u:{cornerGreenDay.Y}|v: {cornerGreenDay.X}");
+        //await RBD.TranslateTo(cornerGreenDay.Y, cornerGreenDay.X, 0, Easing.Linear);
+        //ToolTipProperties.SetText(GBD, $"u:{cornerBlueDay.Y}|v: {cornerBlueDay.X}");
+        //await GBD.TranslateTo(cornerBlueDay.Y, cornerBlueDay.X, 0, Easing.Linear);
+
+        PathGeometry pathNight = (PathGeometry)GammutNight.Data;
+        pathNight.Figures[0].StartPoint = cornerBlueNight;
+
+        PathSegmentCollection segmentsNight = pathNight.Figures[0].Segments;
+
+        ((LineSegment)segmentsNight[0]).Point = cornerRedNight;
+        ((LineSegment)segmentsNight[1]).Point = cornerGreenNight;
+        ((LineSegment)segmentsNight[2]).Point = cornerBlueNight;
 
     }
 
@@ -432,10 +503,10 @@ public partial class MainPage : ContentPage
         {
             case "BtnSetSetup":
                 myMessage.Command = cbStatusRequest.IsChecked ? PossibleCommands.SETSETUPSR : PossibleCommands.SETSETUP;
-                myMessage.PSI = 8;
+                myMessage.PSI = 9; // PSI 2 + Type 1 + command 1 + addr 2 + setup + crc 2
                 break;
             case "BtnSetOtth":
-                myMessage.PSI = 10;
+                myMessage.PSI = 11; // PSI 2 + Type 1 + command 1 + addr 2 + otth 3 + crc 2
                 myMessage.Command = cbStatusRequest.IsChecked ? PossibleCommands.SETOTTHSR :PossibleCommands.SETOTTH;
                 break;
             default:
@@ -653,7 +724,7 @@ public partial class MainPage : ContentPage
             Button dummy = new Button();
             myMessage.Command = cbStatusRequest.IsChecked ? PossibleCommands.SETOTTHSR : PossibleCommands.SETOTTH;
             myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-            myMessage.PSI = 10;
+            myMessage.PSI = 11; // PSI 2 + Type 1 + command 1 + addr 2 + oth 3 + crc 2
             await ExecuteCommandAsync(async () => await SendCommandAsync(dummy));
         }
     }
@@ -687,7 +758,7 @@ public partial class MainPage : ContentPage
         Button dummy = new Button();
 
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 7;
+        myMessage.PSI = 8;
         myMessage.Command = PossibleCommands.READTEMPST;
         myMessage.Address = Light.SelectedLed;
 
@@ -851,7 +922,7 @@ public partial class MainPage : ContentPage
         }
 
         //Display the Error if one accured
-        if (myMessage.Error != 0)
+        if (!myMessage.rawErrorCode.Equals(0))
         {
             Dispatcher.Dispatch(() => LblLedState.Text = myMessage.getErrorCode());
             return false;
@@ -867,6 +938,10 @@ public partial class MainPage : ContentPage
             {
                 Dispatcher.Dispatch(() => LblLedState.Text = "Updating the UI failed");
             }
+            else
+            {
+                Dispatcher.Dispatch(() => LblLedState.Text = "");
+            }
         }
 
 
@@ -878,6 +953,11 @@ public partial class MainPage : ContentPage
 
     private bool UpdateUi()
     {
+        if (Light.SelectedLed > Light.LedCount)
+        {
+            Dispatcher.Dispatch(() => lblLightState.Text = "Selected light out of range");
+            return false;
+        }
         ushort addr = Light.SelectedLed;
         if (addr > 0) { addr -= 1; } // Handle offset from addr 1... zu array 0...
         LED led = Light.LEDs.ElementAt(addr);
@@ -889,7 +969,17 @@ public partial class MainPage : ContentPage
                 break;
             case PossibleCommands.INITBIDIR:
                 Light.SelectedLed = (ushort)(myMessage.LedCount);
-                led = Light.LEDs.ElementAt(Light.SelectedLed - 1);
+                try
+                {
+                    led = Light.LEDs.ElementAt(Light.SelectedLed - 1);
+                }
+                catch
+                (Exception ex)
+                {
+                    Dispatcher.Dispatch(() => lblLightState.Text = "Selected light out of range");
+
+                    return false;
+                }
                 led.SetTempSt(ref myMessage);
                 Dispatcher.Dispatch(() => EntryCurrentTemp.Text = led.Temperature.ToString());
                 Dispatcher.Dispatch(() => LblState.Text = led.State);
@@ -955,18 +1045,18 @@ public partial class MainPage : ContentPage
                 Dispatcher.Dispatch(() => LblRs.Text = led.RS);
                 Dispatcher.Dispatch(() => LblGs.Text = led.BS);
                 Dispatcher.Dispatch(() => LblBs.Text = led.GS);
-
                 break;
             case PossibleCommands.READTEMP:
                 led.SetTemp(ref myMessage);
                 Dispatcher.Dispatch(() => EntryCurrentTemp.Text = led.Temperature.ToString());
+                Dispatcher.Dispatch(() => LblRefreshOtth.Text = led.TimestampOtth);
                 break;
             case PossibleCommands.READOTTH:
                 led.SetOtth(ref myMessage);
                 Dispatcher.Dispatch(() => EntryOrCycle.Text = led.OrCycle.ToString());
                 Dispatcher.Dispatch(() => EntryOtLow.Text = led.OtLowValue.ToString());
                 Dispatcher.Dispatch(() => EntryOtHigh.Text = led.OtHighValue.ToString());
-
+                Dispatcher.Dispatch(() => LblRefreshOtth.Text = led.TimestampOtth);
                 break;
             case PossibleCommands.SETOTTH:
                 break;
@@ -1142,7 +1232,7 @@ public partial class MainPage : ContentPage
                 return;
             }
             myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-            myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
+            myMessage.PSI = 14; // PSI (2) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
             CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
@@ -1217,12 +1307,13 @@ public partial class MainPage : ContentPage
                 myMessage.Command = cbStatusRequest.IsChecked ? PossibleCommands.SETLUVSR : PossibleCommands.SETLUV;
             }
             myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-            myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
+            myMessage.PSI = 14; // PSI (2) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
             Button btn = new();
             CheckBroadcast();
             await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
         }
-        await elli.TranslateTo(p.Value.X -115 , p.Value.Y-15, 200, Easing.Linear);
+        ToolTipProperties.SetText(elli, $"u:{u}|v: {v}");
+        await elli.TranslateTo(p.Value.X -120, p.Value.Y - 107, 200, Easing.Linear);
     }
 
     private async void UpdateColor(object sender, EventArgs e)
@@ -1243,7 +1334,7 @@ public partial class MainPage : ContentPage
             myMessage.Command = cbStatusRequest.IsChecked ? PossibleCommands.SETLUVSR : PossibleCommands.SETLUV;
         }
         myMessage.Type = MessageTypes.COMMAND_WITH_RESPONSE;
-        myMessage.PSI = 13; // PSI (1) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
+        myMessage.PSI = 14; // PSI (2) + Type (1) + Command (1) + Address (2) + Payload(6) +  CRC (2)
         CheckBroadcast();
         await ExecuteCommandAsync(async () => await SendCommandAsync(btn));
     }
@@ -1361,5 +1452,3 @@ public partial class MainPage : ContentPage
         BtnActivateLight.Text = led.State == "Active" ? "ON" : "OFF";
     }
 }
-
-

@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
              x:Class="Osire.MainPage">
    
     <Grid>
@@ -71,8 +72,8 @@
                     MaximumHeightRequest="50"
                     MaximumWidthRequest="150"
                     ToolTipProperties.Text="Start the IOL Demo"/>
-            <Button Text="{Binding GetCounter}" Command="{Binding IncNumCommand}"/>
-            <Button Text="{Binding GetCounter}" Command="{Binding DecNumCommand}"/>
+            <!--<Button Text="{Binding GetCounter}" Command="{Binding IncNumCommand}"/>
+            <Button Text="{Binding GetCounter}" Command="{Binding DecNumCommand}"/>-->
         </VerticalStackLayout>
 
         <!--Light config-->
@@ -131,7 +132,7 @@
                     <Entry x:Name="EntryLedCount"
                     MaximumHeightRequest="15"
                     MinimumWidthRequest="100"
-                    Text="21"
+                    Text="41"
                     Placeholder="LED Count"
                     ClearButtonVisibility="WhileEditing"
                     MaxLength="4"
@@ -307,27 +308,66 @@
             <!--UV Preview-->
             <HorizontalStackLayout Grid.Row="5" Grid.Column="0">
                 <Button Text="SetColor" Clicked="UpdateColor" MaximumHeightRequest="50" VerticalOptions="Center" ToolTipProperties.Text="Set the LED color"/>
-                <CheckBox x:Name="CbLiveUpdate" Color="Green" Margin="35,0,0,0" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
+                <Button Text="GetGamut" Clicked="GetGamut" MaximumHeightRequest="50" VerticalOptions="Center" ToolTipProperties.Text="Fetch gamut for all LEDs"/>
+                <CheckBox x:Name="CbLiveUpdate" Color="Green" Margin="5,0,0,0" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
                 <Label Text="Live Update" VerticalOptions="Center" ToolTipProperties.Text="PWM Values will be updated as soon as they change"/>
-                <StackLayout Grid.Row="3" Orientation="Horizontal" Spacing="5" Grid.Column="3" Grid.ColumnSpan="2" VerticalOptions="Center"  Margin="35,0,0,0" ToolTipProperties.Text="Raw U and V Data">
+                <StackLayout Grid.Row="3" Orientation="Horizontal" Spacing="5" Grid.Column="3" Grid.ColumnSpan="2" VerticalOptions="Center"  Margin="10,0,0,0" ToolTipProperties.Text="Raw U and V Data">
                     <Label Text="u'" VerticalOptions="Center"/>
                     <Entry ClassId="EntryU" x:Name="EntryU" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
                     <Label Text="v'" VerticalOptions="Center"/>
                     <Entry ClassId="EntryV" x:Name="EntryV" MaxLength="5" Completed="OnUvChange" TextChanged="OnUvChange" />
                 </StackLayout>
                 <HorizontalStackLayout>
-                    <CheckBox ClassId="CbPwmLuv" x:Name="CbPwmLuv" Color="Green" Margin="35,0,0,0" CheckedChanged="CheckboxChanged" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
+                    <CheckBox ClassId="CbPwmLuv" x:Name="CbPwmLuv" Color="Green" Margin="5,0,0,0" CheckedChanged="CheckboxChanged" ToolTipProperties.Text="Select whether RGB or LUV values should be send"/>
                     <Label x:Name="LblColor" Text="Luv" VerticalOptions="Center" ToolTipProperties.Text="Select whether RGB or Luv values should be send"/>
                 </HorizontalStackLayout>
             </HorizontalStackLayout>
-
-            <Ellipse x:Name="elli" Stroke="black" StrokeThickness="2" WidthRequest="15" HeightRequest="15" Grid.Row="0" Grid.Column="3" ZIndex="2"/>
-            <Image x:Name="img" Source="cie_luv_fixed.png" Grid.Row="0" Grid.Column="3" Grid.RowSpan="6" ZIndex="1" 
+            <Grid Grid.Row="0" Grid.Column="3" Grid.RowSpan="6">
+            <Ellipse x:Name="elli" Stroke="black" StrokeThickness="2" WidthRequest="15" HeightRequest="15"  ZIndex="2" InputTransparent="True"/>
+            <Image x:Name="img" Source="cie_luv_fixed.png" ZIndex="1" 
                    BackgroundColor="Black">
                 <Image.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTab" NumberOfTapsRequired="1"/>
                 </Image.GestureRecognizers>
             </Image>
+                <Path x:Name="GammutDay" Stroke="Black" StrokeThickness="1" ZIndex="2" InputTransparent="True">
+                <Path.Data>
+                    <PathGeometry>
+                        <PathGeometry.Figures>
+                            <PathFigure StartPoint="50, 50">
+                                <PathFigure.Segments>
+                                    <PathSegmentCollection>
+                                        <LineSegment Point="90,50" />
+                                        <LineSegment Point="50,90" />
+                                        <LineSegment Point="50,50" />
+                                    </PathSegmentCollection>
+                                </PathFigure.Segments>
+                            </PathFigure>
+                        </PathGeometry.Figures>
+                    </PathGeometry>
+                </Path.Data>
+            </Path>
+                <Ellipse x:Name="RGD" Stroke="Black" StrokeThickness="2" WidthRequest="10" HeightRequest="10" Fill="White"  ZIndex="2" ToolTipProperties.Text="Ich bin da"/>
+                <Ellipse x:Name="RBD" Stroke="Black" StrokeThickness="2" WidthRequest="10" HeightRequest="10" Fill="White"  ZIndex="2" ToolTipProperties.Text="Ich bin da 2"/>
+                <Ellipse x:Name="GBD" Stroke="Black" StrokeThickness="2" WidthRequest="10" HeightRequest="10" Fill="White"  ZIndex="2" ToolTipProperties.Text="Ich bin da 3"/>
+                <Path x:Name="GammutNight" Stroke="Pink" StrokeThickness="1" ZIndex="1" InputTransparent="True">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathGeometry.Figures>
+                                <PathFigure StartPoint="90, 90">
+                                    <PathFigure.Segments>
+                                        <PathSegmentCollection>
+                                            <LineSegment Point="190,90" />
+                                            <LineSegment Point="120,150" />
+                                            <LineSegment Point="90,90" />
+                                        </PathSegmentCollection>
+                                    </PathFigure.Segments>
+                                </PathFigure>
+                            </PathGeometry.Figures>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
+            </Grid>
         </Grid>
 
         <!--LED stats-->
@@ -743,15 +783,36 @@
                     />
                     <Label x:Name="lblledAddr" Text="Select a LED" FontSize="12" IsVisible="False"/>
                 </VerticalStackLayout>
-                
-                <ListView x:Name="countedLeds" HorizontalOptions="Start" MaximumWidthRequest="75" ItemSelected="svLedSelected"
+
+                <CollectionView x:Name="countedLeds" HorizontalOptions="Start" WidthRequest="75" SelectionChanged="svLedSelected"
+                      Grid.Row="1" Grid.Column="0" Grid.RowSpan="4" IsVisible="False">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <VerticalStackLayout VerticalOptions="Center">
+                                <Label Text="{Binding Address}" Margin="0" Padding="0"/>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup Name="CommonStates">
+                                        <VisualState Name="Normal" />
+                                        <VisualState Name="Selected">
+                                            <VisualState.Setters>
+                                                <Setter Property="BackgroundColor" Value="LightSkyBlue" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!--<ListView x:Name="countedLeds" HorizontalOptions="Start" MaximumWidthRequest="75" ItemSelected="svLedSelected"
                       Grid.Row="1" Grid.Column="0" Grid.RowSpan="4" IsVisible="False" Margin="10, 0, 0, 0" >
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <TextCell Text="{Binding Address}"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                </ListView>
+                </ListView>-->
 
                 <VerticalStackLayout Grid.Row="0" Grid.Column="1" Margin="5,0,0,0">
                     <Label Text="Options"/>
@@ -771,8 +832,8 @@
                             <!--<HorizontalStackLayout>
                                 <CheckBox Color="Green"/>
                                 <Label Text="Temp Correction" VerticalOptions="Center"/>
-                            </HorizontalStackLayout>-->
-                        <!--<Button Text="Init LED"
+                            </HorizontalStackLayout>--><!--
+                        <Button Text="Init LED"
                             ToolTipProperties.Text="Init the Leds"
                             VerticalOptions="Center"
                             HorizontalOptions="Start"

@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-
 
 namespace Osire.Models
 {
@@ -51,7 +45,7 @@ namespace Osire.Models
 
         public async Task <byte[]> ReceiveMessage(CancellationToken cT)
         {
-            byte[] data = new byte[64]; //39 is the max answer size (OTP)
+            byte[] data = new byte[81]; //81 is the max answer size (Gammut)
             
             try
             {
@@ -62,9 +56,11 @@ namespace Osire.Models
                 Console.WriteLine(e);
                 return Array.Empty<byte>();
             }
-           
-            Array.Resize(ref data, (data[1]+1)); //Cut data to size
-            return data.Skip(1).ToArray(); //remove preamble 
+
+            ushort psi = BitConverter.ToUInt16(data, 0);  //[0][1]
+
+            Array.Resize(ref data, psi); //Cut data to size
+            return data;
         }
 
         public async Task<byte[]> Receive(CancellationToken cT)

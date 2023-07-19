@@ -65,26 +65,54 @@ namespace Osire.Models
         public ushort ChipId { get; set; }
         public byte WaverId { get; set; }
 
-        public float RedDayU { get; set; }
-        public float RedDayV { get; set; }
-        public float RedDayLv { get; set; }
-        public float RedNightU { get; set; }
-        public float RedNightV { get; set; }
-        public float RedNightLv { get; set; }
+        public double RedDayU { get; set; }
+        public double RedDayV { get; set; }
+        public double RedDayLv { get; set; }
+        public double RedNightU { get; set; }
+        public double RedNightV { get; set; }
+        public double RedNightLv { get; set; }
 
-        public float GreenDayU { get; set; }
-        public float GreenDayV { get; set; }
-        public float GreenDayLv { get; set; }
-        public float GreenNightU { get; set; }
-        public float GreenNightV { get; set; }
-        public float GreenNightLv { get; set; }
+        public double GreenDayU { get; set; }
+        public double GreenDayV { get; set; }
+        public double GreenDayLv { get; set; }
+        public double GreenNightU { get; set; }
+        public double GreenNightV { get; set; }
+        public double GreenNightLv { get; set; }
 
-        public float BlueDayU { get; set; }
-        public float BlueDayV { get; set; }
-        public float BlueDayLv { get; set; }
-        public float BlueNightU { get; set; }
-        public float BlueNightV { get; set; }
-        public float BlueNightLv { get; set; }
+        public double BlueDayU { get; set; }
+        public double BlueDayV { get; set; }
+        public double BlueDayLv { get; set; }
+        public double BlueNightU { get; set; }
+        public double BlueNightV { get; set; }
+        public double BlueNightLv { get; set; }
+
+        public double[] tempConstants = new double[]
+        {   //a         //b
+            1.030E-05, -7.397E-03,  //Red|Night|L
+            -1.653E-06, 4.029E-04,  //Red|Night|u
+            2.567E-07, -6.984E-05,  //Red|Night|v
+            -5.864E-07, -2.306E-03, //Green|Night|L
+            4.555E-06, 2.081E-03,   //Green|Night|u
+            -8.166E-08, -1.921E-05, //Green|Night|v
+            -2.679E-06, 7.200E-04,  //Blue|Night|L
+            -1.060E-06, -6.739E-04, //Blue|Night|u
+            5.774E-06, 2.434E-03,   //Blue|Night|v
+    
+            1.122E-05, -7.808E-03,  //Red|Day|L
+            -1.466E-06, 3.727E-04,  //Red|Day|u
+            2.475E-07, -6.384E-05,  //Red|Day|v
+            -5.946E-06, -1.813E-03, //Green|Day|L
+            5.878E-06, 2.241E-03,   //Green|Day|u
+            -1.897E-07, 1.981E-05,  //Green|Day|v
+            -2.226E-06, 7.734E-04,  //Blue|Day|L
+            -1.036E-06, -6.427E-04, //Blue|Day|u
+            6.519E-06, 2.423E-03    //Blue|Day|v
+        };
+        public double[] calibrationConstatns = new double[]
+        { //L   //U,V
+          0.44, 0.0025, // Night
+          1.25, 0.0025 // Day
+        };
 
         public LED() { }
 
@@ -93,26 +121,29 @@ namespace Osire.Models
             ChipId = BitConverter.ToUInt16(msg.OTP, 0);
             WaverId = (byte)((msg.OTP[3]) & 0b00001111) ;
 
-            RedNightU = msg.OTP[10] / 400f;
-            RedNightV = msg.OTP[11] / 400f;
-            RedNightLv = (msg.OTP[13] | ((msg.OTP[12] & 0x0F) << 8));
-            RedDayU = msg.OTP[14] / 400f;
-            RedDayV = msg.OTP[15] / 400f;
-            RedDayLv = (msg.OTP[16] | ((msg.OTP[12] & 0xF0) << 4));
+            RedNightU = Math.Ceiling( msg.OTP[10] * calibrationConstatns[3] * 100000);
+            RedNightV = Math.Ceiling( msg.OTP[11]*calibrationConstatns[3] * 100000);
+            RedNightLv = Math.Ceiling( (msg.OTP[12] | ((msg.OTP[13] & 0x0F) << 8)) * calibrationConstatns[2] * 4);
 
-            BlueNightU = msg.OTP[17] / 400f;
-            BlueNightV = msg.OTP[18] / 400f;
-            BlueNightLv = (msg.OTP[19] | ((msg.OTP[20] & 0x0F) << 8));
-            BlueDayU = msg.OTP[21] / 400f;
-            BlueDayV = msg.OTP[22] / 400f;
-            BlueDayLv = (msg.OTP[23] | ((msg.OTP[20] & 0xF0) << 4));
+            RedDayU = Math.Ceiling( msg.OTP[14]*calibrationConstatns[3] * 100000);
+            RedDayV = Math.Ceiling( msg.OTP[15]*calibrationConstatns[3] * 100000);
+            RedDayLv = Math.Ceiling( (msg.OTP[16] | ((msg.OTP[13] & 0xF0) << 4))*calibrationConstatns[2] * 4);
 
-            GreenNightU = msg.OTP[24] / 400f;
-            GreenNightV = msg.OTP[25] / 400f;
-            GreenNightLv = (msg.OTP[26] | ((msg.OTP[27] & 0x0F) << 8));
-            GreenDayU = msg.OTP[28] / 400f;
-            GreenDayV = msg.OTP[29] / 400f;
-            GreenDayLv = (msg.OTP[30] | ((msg.OTP[27] & 0xF0) << 4));
+            BlueNightU = Math.Ceiling( msg.OTP[17]*calibrationConstatns[3] * 100000);
+            BlueNightV = Math.Ceiling( msg.OTP[18]*calibrationConstatns[3] * 100000);
+            BlueNightLv = Math.Ceiling( (msg.OTP[19] | ((msg.OTP[20] & 0x0F) << 8))*calibrationConstatns[2] * 4);
+
+            BlueDayU = Math.Ceiling( msg.OTP[21]*calibrationConstatns[3] * 100000);
+            BlueDayV = Math.Ceiling( msg.OTP[22]*calibrationConstatns[3] * 100000);
+            BlueDayLv = Math.Ceiling( (msg.OTP[23] | ((msg.OTP[20] & 0xF0) << 4))*calibrationConstatns[2] * 4);
+
+            GreenNightU = Math.Ceiling( msg.OTP[24]*calibrationConstatns[3] * 100000);
+            GreenNightV = Math.Ceiling( msg.OTP[25]*calibrationConstatns[3] * 100000);
+            GreenNightLv = Math.Ceiling( (msg.OTP[26] | ((msg.OTP[27] & 0x0F) << 8))*calibrationConstatns[2] * 4);
+
+            GreenDayU = Math.Ceiling( msg.OTP[28]*calibrationConstatns[3] * 100000);
+            GreenDayV = Math.Ceiling( msg.OTP[29]*calibrationConstatns[3] * 100000);
+            GreenDayLv = Math.Ceiling( (msg.OTP[30] | ((msg.OTP[27] & 0xF0) << 4))*calibrationConstatns[2] * 4);
 
             using (StreamWriter writer = new StreamWriter("C:\\Programmieren\\Osire\\UVL.txt", true))
             {
